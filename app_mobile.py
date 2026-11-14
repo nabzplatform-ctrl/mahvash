@@ -632,6 +632,16 @@ elif choice == T["chat"]:
                 read_mark = " ✓✓" if (is_me and m.get("is_read")) else (" ✓" if is_me else "")
                 align_style = "border-left: 3px solid #00F2FE; background-color: #1A222D;" if is_me else "border-left: 3px solid #8F9CAF; background-color: #16161E;"
                 st.markdown(f'<div style="{align_style} padding: 8px 12px; border-radius: 10px; margin-bottom: 6px;"><b>@{m["sender_username"]}</b> <small>({m["created_at"]}{read_mark})</small><br>{m.get("text", "")}</div>', unsafe_allow_html=True)
+                if m.get("text"):
+                    tc1, tc2 = st.columns([2, 1])
+                    with tc1:
+                        t_to = st.selectbox("Язык", ["tg (Тоҷикӣ)", "ru (Русский)", "en (English)", "tr (Türkçe)", "uz (Oʻzbek)", "fa (فارسی)", "ar (العربية)", "zh-CN (中文)"], label_visibility="collapsed", key=f"tl_{m['id']}")
+                    with tc2:
+                        if st.button("🌐 Перевод", key=f"tr_btn_{m['id']}"):
+                            lc = t_to.split(" ")
+                            st.session_state[f"tr_out_{m['id']}"] = ai_translate_text(m["text"], lc)
+                    if st.session_state.get(f"tr_out_{m['id']}"):
+                        st.info(f"🌐 {st.session_state[f'tr_out_{m['id']}']}")
                 
                 if m.get("media_url"):
                     mtype = m.get("media_type")
@@ -713,6 +723,7 @@ elif choice == T["chat"]:
                             st.session_state[f"pending_txt_{rid}"] = res_txt
                             st.rerun()
 
+            auto_tr = st.selectbox("🌐 Перевод при отправке:", ["Без перевода (как написано)", "Перевести на English (EN)", "Перевести на Тоҷикӣ (TJ)", "Перевести на Русский (RU)", "Перевести на Türkçe (TR)", "Перевести на العربية (AR)", "Перевести на 中文 (ZH)"], label_visibility="collapsed", key=f"auto_tr_lang_{rid}")
             sc1, sc2 = st.columns([3, 1])
             with sc1:
                 if st.button("📨 Отправить", key=f"send_msg_{rid}"):
@@ -740,7 +751,7 @@ elif choice == T["chat"]:
                                 except Exception:
                                     pass
                             files_p = {"file": (msg_file.name, f_bytes, msg_file.type)}
-                        requests.post(f"{API_URL}/chats/{rid}/send", data={"sender": me, "text": msg_txt.strip()}, files=files_p)
+                        requests.post(f"{API_URL}/chats/{rid}/send", data={"sender": me, "text": (ai_translate_text(msg_txt.strip(), "en" if "EN" in auto_tr else ("tg" if "TJ" in auto_tr else ("ru" if "RU" in auto_tr else ("tr" if "TR" in auto_tr else ("ar" if "AR" in auto_tr else "zh-CN"))))) if auto_tr != "Без перевода (как написано)" else msg_txt.strip())}, files=files_p)
                         st.session_state[f"clear_inp_{rid}"] = True
                         st.rerun()
             with sc2:
