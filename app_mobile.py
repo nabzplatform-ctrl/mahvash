@@ -25,11 +25,13 @@ label, .stTextInput label, .stPasswordInput label, [data-testid="stWidgetLabel"]
 }
 
 /* Вкладки: Вход по паролю / Регистрация / Сброс */
-button[data-baseweb="tab"] {
-    color: #C8C8E0 !important;
+button[data-baseweb="tab"], button[data-baseweb="tab"] p, button[data-baseweb="tab"] div {
+    color: #FFFFFF !important;
     font-weight: 600 !important;
+    font-size: 16px !important;
+    opacity: 1 !important;
 }
-button[data-baseweb="tab"][aria-selected="true"] {
+button[data-baseweb="tab"][aria-selected="true"], button[data-baseweb="tab"][aria-selected="true"] p {
     color: #00F2FE !important;
 }
 
