@@ -23,7 +23,7 @@ st.markdown("""
     [data-testid="stExpander"] { background-color: #15151F !important; border: 1px solid #2D2D44 !important; border-radius: 12px !important; }
     [data-testid="stAlert"] { background-color: #161A24 !important; color: #FFFFFF !important; border: 1px solid #00F2FE !important; border-radius: 12px !important; }
     [data-testid="stAlert"] * { color: #FFFFFF !important; }
-    [data-testid="stAlert"], div[role="alert"] { background-color: #161A24 !important; color: #FFFFFF !important; border: 1px solid #00F2FE !important; border-radius: 12px !important; }
+    [data-testid="stAlert"], [data-testid="stAlert"] > div, div[role="alert"], div[role="alert"] > div { background-color: #181C28 !important; color: #FFFFFF !important; border-color: #00F2FE !important; border-radius: 12px !important; }
     [data-testid="stAlert"] *, div[role="alert"] * { color: #FFFFFF !important; }
 </style>
 """, unsafe_allow_html=True)
@@ -641,37 +641,53 @@ elif choice == T["chat"]:
             if st.session_state.pop(f"clear_inp_{rid}", False):
                 st.session_state[f"chat_inp_{rid}"] = ""
 
-            emo_cols = st.columns(8)
-            emojis = ["❤️", "🔥", "👍", "😂", "😍", "🙏", "🎉", "🤝"]
-            for i, em in enumerate(emojis):
-                if emo_cols[i].button(em, key=f"em_{rid}_{i}"):
-                    st.session_state[f"chat_inp_{rid}"] = st.session_state.get(f"chat_inp_{rid}", "") + em
-                    st.rerun()
+            if st.session_state.pop(f"clear_inp_{rid}", False):
+                st.session_state[f"chat_inp_{rid}"] = ""
+                st.session_state[f"v_key_{rid}"] = st.session_state.get(f"v_key_{rid}", 0) + 1
 
-            with st.expander("✨ Умный помощник текста и фото (без следов ИИ)"):
-                ai_draft = st.text_input("Напишите черновик или идею ответа:", key=f"ai_dr_{rid}")
-                ai_style = st.selectbox("Стиль ответа:", ["Грамотный и вежливый", "Деловой и уверенный", "Тёплый и дружеский", "Краткий по делу"], key=f"ai_st_{rid}")
-                if st.button("🪄 Сделать текст красивым", key=f"ai_btn_{rid}"):
-                    raw = ai_draft.strip()
-                    if raw:
-                        clean = raw.upper() + raw[1:]
-                        if clean[-1] not in ".!?":
-                            clean += "."
-                        if ai_style == "Грамотный и вежливый":
-                            res_txt = f"Здравствуйте! {clean} Буду рад продолжить общение."
-                        elif ai_style == "Деловой и уверенный":
-                            res_txt = f"Добрый день. {clean} Давайте обсудим детали."
-                        elif ai_style == "Тёплый и дружеский":
-                            res_txt = f"Привет! 😊 {clean} Как твои дела?"
-                        else:
-                            res_txt = clean
-                        st.session_state[f"chat_inp_{rid}"] = res_txt
+            msg_txt = st.text_input("Сообщение...", placeholder="Напишите сообщение...", label_visibility="collapsed", key=f"chat_inp_{rid}")
+
+            t_emo, t_voice, t_file, t_ai = st.tabs(["😊 Смайлы", "🎙️ Голос", "📎 Фото/Видео", "✨ ИИ-ответ"])
+
+            with t_emo:
+                emo_cols = st.columns(8)
+                emojis = ["❤️", "🔥", "👍", "😂", "😍", "🙏", "🎉", "🤝"]
+                for i, em in enumerate(emojis):
+                    if emo_cols[i].button(em, key=f"em_{rid}_{i}"):
+                        st.session_state[f"chat_inp_{rid}"] = st.session_state.get(f"chat_inp_{rid}", "") + em
                         st.rerun()
-                st.checkbox("🎨 Авто-улучшение фото перед отправкой (чёткость + яркость)", value=True, key=f"ai_ph_{rid}")
 
-            voice_rec = st.audio_input("🎙️ Записать голосовое сообщение", key=f"voice_{rid}")
-            msg_txt = st.text_input("Написать сообщение...", key=f"chat_inp_{rid}")
-            msg_file = st.file_uploader("Прикрепить фото, видео или кружок", key=f"chat_file_{rid}")
+            with t_voice:
+                v_idx = st.session_state.get(f"v_key_{rid}", 0)
+                voice_rec = st.audio_input("Записать голосовое", label_visibility="collapsed", key=f"voice_{rid}_{v_idx}")
+
+            with t_file:
+                msg_file = st.file_uploader("Фото или видео", type=["jpg", "jpeg", "png", "mp4", "mov", "mp3", "ogg", "wav"], label_visibility="collapsed", key=f"chat_file_{rid}")
+                st.checkbox("🎨 ИИ-улучшение фото", value=True, key=f"ai_ph_{rid}")
+
+            with t_ai:
+                ai_draft = st.text_input("Черновик ответа:", placeholder="Например: давай встретимся завтра", label_visibility="collapsed", key=f"ai_dr_{rid}")
+                ac1, ac2 = st.columns(2)
+                with ac1:
+                    ai_style = st.selectbox("Стиль:", ["Вежливый", "Деловой", "Дружеский", "Краткий"], label_visibility="collapsed", key=f"ai_st_{rid}")
+                with ac2:
+                    if st.button("🪄 Оформить", key=f"ai_btn_{rid}"):
+                        raw = ai_draft.strip()
+                        if raw:
+                            clean = raw[0].upper() + raw[1:]
+                            if clean[-1] not in ".!?":
+                                clean += "."
+                            if ai_style == "Вежливый":
+                                res_txt = f"Здравствуйте! {clean} Буду рад продолжить общение."
+                            elif ai_style == "Деловой":
+                                res_txt = f"Добрый день. {clean} Давайте обсудим детали."
+                            elif ai_style == "Дружеский":
+                                res_txt = f"Привет! 😊 {clean} Как дела?"
+                            else:
+                                res_txt = clean
+                            st.session_state[f"chat_inp_{rid}"] = res_txt
+                            st.rerun()
+
             sc1, sc2 = st.columns([3, 1])
             with sc1:
                 if st.button("📨 Отправить", key=f"send_msg_{rid}"):
