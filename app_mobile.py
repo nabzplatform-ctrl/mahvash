@@ -7,41 +7,20 @@ st.set_page_config(page_title="NABZ App", page_icon="📱", layout="centered")
 
 st.markdown("""
 <style>
-    .stApp { background-color: #0E0E14; color: #FFFFFF; }
-    div.stButton > button:first-child {
-        background-color: #00F2FE; color: #000000; font-weight: bold;
-        border-radius: 20px; width: 100%; border: none; padding: 8px;
-    }
+    .stApp, [data-testid="stSidebar"], [data-testid="stSidebar"] > div:first-child { background-color: #0E0E14 !important; color: #FFFFFF !important; }
+    header[data-testid="stHeader"] { background-color: #0E0E14 !important; }
+    header[data-testid="stHeader"] svg, [data-testid="collapsedControl"] svg { fill: #00F2FE !important; color: #00F2FE !important; }
+    [data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label, .stApp h1, .stApp h2, .stApp h3, .stApp h4, label, [data-testid="stWidgetLabel"] p { color: #FFFFFF !important; }
+    [role="tab"], [role="tab"] p, [role="tab"] span, [data-baseweb="tab"], [data-baseweb="tab"] p, [data-baseweb="tab"] span { color: #D8D8EC !important; font-weight: 600 !important; font-size: 16px !important; }
+    [role="tab"][aria-selected="true"], [role="tab"][aria-selected="true"] p, [data-baseweb="tab"][aria-selected="true"], [data-baseweb="tab"][aria-selected="true"] p { color: #00F2FE !important; }
+    input, textarea, [data-baseweb="select"] > div { background-color: #1A1A26 !important; color: #FFFFFF !important; border: 1px solid #3A3A55 !important; border-radius: 10px !important; }
+    div.stButton > button, div.stButton > button p { background-color: #00F2FE !important; color: #000000 !important; font-weight: 700 !important; border-radius: 20px !important; border: none !important; }
     .phone-header { text-align: center; color: #00F2FE; font-size: 28px; font-weight: bold; margin-bottom: 2px; }
-    .phone-slogan { text-align: center; color: #8F9CAF; font-size: 14px; margin-bottom: 15px; }
-    .comment-box { background-color: #1A1A24; padding: 10px; border-radius: 10px; margin-bottom: 6px; border-left: 3px solid #00F2FE; }
-    .reply-box { background-color: #15151E; padding: 8px; border-radius: 8px; margin-left: 25px; margin-bottom: 6px; border-left: 2px solid #8F9CAF; }
+    .phone-slogan { text-align: center; color: #A0AEC0; font-size: 14px; margin-bottom: 15px; }
+    .comment-box { background-color: #1A1A24; color: #FFFFFF; padding: 10px; border-radius: 10px; margin-bottom: 6px; border-left: 3px solid #00F2FE; }
+    .reply-box { background-color: #15151E; color: #E2E8F0; padding: 8px; border-radius: 8px; margin-left: 25px; margin-bottom: 6px; border-left: 2px solid #8F9CAF; }
     .repost-badge { background-color: #1E2430; padding: 5px 10px; border-radius: 8px; color: #00F2FE; font-size: 13px; margin-bottom: 8px; }
-/* Яркий белый и неоновый текст для всех подписей и вкладок */
-label, .stTextInput label, .stPasswordInput label, [data-testid="stWidgetLabel"] p {
-    color: #FFFFFF !important;
-    font-weight: 600 !important;
-    font-size: 15px !important;
-}
-
-/* Вкладки: Вход по паролю / Регистрация / Сброс */
-button[data-baseweb="tab"], button[data-baseweb="tab"] p, button[data-baseweb="tab"] div {
-    color: #FFFFFF !important;
-    font-weight: 600 !important;
-    font-size: 16px !important;
-    opacity: 1 !important;
-}
-button[data-baseweb="tab"][aria-selected="true"], button[data-baseweb="tab"][aria-selected="true"] p {
-    color: #00F2FE !important;
-}
-
-/* Темные поля ввода с неоновой рамкой и белым текстом внутри */
-input {
-    background-color: #1A1A26 !important;
-    color: #FFFFFF !important;
-    border: 1px solid #4A4A6A !important;
-    border-radius: 10px !important;
-}
+    [data-testid="stExpander"] { background-color: #15151F !important; border: 1px solid #2D2D44 !important; border-radius: 12px !important; }
 </style>
 """, unsafe_allow_html=True)
 
