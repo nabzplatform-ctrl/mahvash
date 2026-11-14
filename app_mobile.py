@@ -658,17 +658,27 @@ elif choice == T["chat"]:
                 st.session_state[f"chat_inp_{rid}"] = ""
                 st.session_state[f"v_key_{rid}"] = st.session_state.get(f"v_key_{rid}", 0) + 1
 
+            if f"pending_txt_{rid}" in st.session_state:
+                st.session_state[f"chat_inp_{rid}"] = st.session_state.pop(f"pending_txt_{rid}")
             msg_txt = st.text_input("Сообщение...", placeholder="Напишите сообщение...", label_visibility="collapsed", key=f"chat_inp_{rid}")
 
-            t_emo, t_voice, t_file, t_ai = st.tabs(["😊 Смайлы", "🎙️ Голос", "📎 Фото/Видео", "✨ ИИ-ответ"])
+            t_emo, t_voice, t_file, t_ai = st.tabs(["😊 Смайлы (60)", "🎙️ Голос", "📎 Фото/Видео", "✨ ИИ-помощник"])
 
             with t_emo:
-                emo_cols = st.columns(8)
-                emojis = ["❤️", "🔥", "👍", "😂", "😍", "🙏", "🎉", "🤝"]
-                for i, em in enumerate(emojis):
-                    if emo_cols[i].button(em, key=f"em_{rid}_{i}"):
-                        st.session_state[f"chat_inp_{rid}"] = st.session_state.get(f"chat_inp_{rid}", "") + em
-                        st.rerun()
+                all_emojis = [
+                    "❤️","🔥","👍","😂","😍","🙏","🎉","🤝","😊","🥰",
+                    "😎","🤩","🥳","😢","😭","😡","🤔","🫡","👏","💪",
+                    "🌹","💐","🌸","✨","⭐","🌙","☀️","⚡","💎","👑",
+                    "🇹🇯","🇷🇺","🇺🇸","🇺🇿","🇰🇿","🇰🇬","🇹🇷","🇦🇪","🌍","✈️",
+                    "☕","🍵","🍉","🍇","🍕","🎂","🎁","🎈","🏆","🥇",
+                    "📱","💻","📸","🎬","🎵","🎤","📚","🔬","💡","🚀"
+                ]
+                for row in range(0, len(all_emojis), 10):
+                    cols = st.columns(10)
+                    for idx, em in enumerate(all_emojis[row:row+10]):
+                        if cols[idx].button(em, key=f"em_{rid}_{row}_{idx}"):
+                            st.session_state[f"pending_txt_{rid}"] = st.session_state.get(f"chat_inp_{rid}", "") + em
+                            st.rerun()
 
             with t_voice:
                 v_idx = st.session_state.get(f"v_key_{rid}", 0)
@@ -679,26 +689,39 @@ elif choice == T["chat"]:
                 st.checkbox("🎨 ИИ-улучшение фото", value=True, key=f"ai_ph_{rid}")
 
             with t_ai:
-                ai_draft = st.text_input("Черновик ответа:", placeholder="Например: давай встретимся завтра", label_visibility="collapsed", key=f"ai_dr_{rid}")
-                ac1, ac2 = st.columns(2)
+                ai_draft = st.text_input("Черновик или текст:", placeholder="Например: чихели корот зурай дар хона", label_visibility="collapsed", key=f"ai_dr_{rid}")
+                ac1, ac2, ac3 = st.columns(3)
                 with ac1:
-                    ai_style = st.selectbox("Стиль:", ["Вежливый", "Деловой", "Дружеский", "Краткий"], label_visibility="collapsed", key=f"ai_st_{rid}")
+                    ai_lang = st.selectbox("Язык:", ["Тоҷикӣ (TJ)", "Русский (RU)", "English (EN)", "Oʻzbek (UZ)", "فارسی (FA)", "العربية (AR)", "Türkçe (TR)", "中文 (ZH)"], label_visibility="collapsed", key=f"ai_lg_{rid}")
                 with ac2:
-                    if st.button("🪄 Оформить", key=f"ai_btn_{rid}"):
+                    ai_style = st.selectbox("Стиль:", ["Вежливый", "Деловой", "Дружеский", "Только перевод"], label_visibility="collapsed", key=f"ai_st_{rid}")
+                with ac3:
+                    if st.button("🪄 Готово", key=f"ai_btn_{rid}"):
                         raw = ai_draft.strip()
                         if raw:
-                            clean = raw[0].upper() + raw[1:]
-                            if clean[-1] not in ".!?":
-                                clean += "."
-                            if ai_style == "Вежливый":
-                                res_txt = f"Здравствуйте! {clean} Буду рад продолжить общение."
-                            elif ai_style == "Деловой":
-                                res_txt = f"Добрый день. {clean} Давайте обсудим детали."
-                            elif ai_style == "Дружеский":
-                                res_txt = f"Привет! 😊 {clean} Как дела?"
+                            l_code = "tg" if "TJ" in ai_lang else ("ru" if "RU" in ai_lang else ("en" if "EN" in ai_lang else ("uz" if "UZ" in ai_lang else ("fa" if "FA" in ai_lang else ("ar" if "AR" in ai_lang else ("tr" if "TR" in ai_lang else "zh-CN"))))))
+                            if ai_style == "Только перевод":
+                                res_txt = ai_translate_text(raw, l_code)
                             else:
-                                res_txt = clean
-                            st.session_state[f"chat_inp_{rid}"] = res_txt
+                                if "TJ" in ai_lang:
+                                    base = ai_translate_text(raw, "tg")
+                                    if ai_style == "Вежливый":
+                                        res_txt = f"Ассалому алайкум! {base} Хеле шодам аз ҳамсуҳбатӣ бо шумо."
+                                    elif ai_style == "Деловой":
+                                        res_txt = f"Салом. {base} Биёед тафсилотро муҳокима кунем."
+                                    else:
+                                        res_txt = f"Салом! 😊 {base} Аҳволат чӣ хел?"
+                                elif "RU" in ai_lang:
+                                    base = ai_translate_text(raw, "ru")
+                                    if ai_style == "Вежливый":
+                                        res_txt = f"Здравствуйте! {base} Буду рад продолжить общение."
+                                    elif ai_style == "Деловой":
+                                        res_txt = f"Добрый день. {base} Давайте обсудим детали."
+                                    else:
+                                        res_txt = f"Привет! 😊 {base} Как дела?"
+                                else:
+                                    res_txt = ai_translate_text(raw, l_code)
+                            st.session_state[f"pending_txt_{rid}"] = res_txt
                             st.rerun()
 
             sc1, sc2 = st.columns([3, 1])
