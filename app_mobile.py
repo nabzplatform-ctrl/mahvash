@@ -17,6 +17,29 @@ st.markdown("""
     .comment-box { background-color: #1A1A24; padding: 10px; border-radius: 10px; margin-bottom: 6px; border-left: 3px solid #00F2FE; }
     .reply-box { background-color: #15151E; padding: 8px; border-radius: 8px; margin-left: 25px; margin-bottom: 6px; border-left: 2px solid #8F9CAF; }
     .repost-badge { background-color: #1E2430; padding: 5px 10px; border-radius: 8px; color: #00F2FE; font-size: 13px; margin-bottom: 8px; }
+/* Яркий белый и неоновый текст для всех подписей и вкладок */
+label, .stTextInput label, .stPasswordInput label, [data-testid="stWidgetLabel"] p {
+    color: #FFFFFF !important;
+    font-weight: 600 !important;
+    font-size: 15px !important;
+}
+
+/* Вкладки: Вход по паролю / Регистрация / Сброс */
+button[data-baseweb="tab"] {
+    color: #C8C8E0 !important;
+    font-weight: 600 !important;
+}
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: #00F2FE !important;
+}
+
+/* Темные поля ввода с неоновой рамкой и белым текстом внутри */
+input {
+    background-color: #1A1A26 !important;
+    color: #FFFFFF !important;
+    border: 1px solid #4A4A6A !important;
+    border-radius: 10px !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -333,14 +356,18 @@ if choice == T["login"]:
         if st.button("Войти"):
             if l_user:
                 res = requests.post(f"{API_URL}/auth/login", json={"username": l_user, "password": l_pass or "12345"})
-                if res.status_code == 200:
-                    prof = res.json()["profile"]
-                    st.session_state["username"] = prof["username"]
-                    if prof.get("language") in ["ru", "tj", "en"]:
-                        st.session_state["lang"] = prof["language"]
-                    st.rerun()
-                else:
-                    st.error(res.json().get("detail", "Ошибка входа"))
+                if res.status_code == 200 and res.text.strip():
+                prof = res.json()["profile"]
+                st.session_state["username"] = prof["username"]
+                if prof.get("language") in ["ru", "tj", "en"]:
+                    st.session_state["lang"] = prof["language"]
+                st.rerun()
+            else:
+                try:
+                    err_msg = res.json().get("detail", "Ошибка входа")
+                except Exception:
+                    err_msg = f"Сервер не отвечает (код {res.status_code}). Проверьте API_URL."
+                st.error(err_msg)
                     
     with tab2:
         r_email = st.text_input("Email")
