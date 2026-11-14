@@ -662,65 +662,54 @@ elif choice == T["chat"]:
                 st.session_state[f"chat_inp_{rid}"] = st.session_state.pop(f"pending_txt_{rid}")
             msg_txt = st.text_input("Сообщение...", placeholder="Напишите сообщение...", label_visibility="collapsed", key=f"chat_inp_{rid}")
 
-            t_emo, t_voice, t_file, t_ai = st.tabs(["😊 Смайлы (60)", "🎙️ Голос", "📎 Фото/Видео", "✨ ИИ-помощник"])
+            b1, b2, b3, b4 = st.columns(4)
+            voice_rec = None
+            msg_file = None
 
-            with t_emo:
-                all_emojis = [
-                    "❤️","🔥","👍","😂","😍","🙏","🎉","🤝","😊","🥰",
-                    "😎","🤩","🥳","😢","😭","😡","🤔","🫡","👏","💪",
-                    "🌹","💐","🌸","✨","⭐","🌙","☀️","⚡","💎","👑",
-                    "🇹🇯","🇷🇺","🇺🇸","🇺🇿","🇰🇿","🇰🇬","🇹🇷","🇦🇪","🌍","✈️",
-                    "☕","🍵","🍉","🍇","🍕","🎂","🎁","🎈","🏆","🥇",
-                    "📱","💻","📸","🎬","🎵","🎤","📚","🔬","💡","🚀"
-                ]
-                for row in range(0, len(all_emojis), 10):
-                    cols = st.columns(10)
-                    for idx, em in enumerate(all_emojis[row:row+10]):
-                        if cols[idx].button(em, key=f"em_{rid}_{row}_{idx}"):
-                            st.session_state[f"pending_txt_{rid}"] = st.session_state.get(f"chat_inp_{rid}", "") + em
-                            st.rerun()
+            with b1:
+                with st.popover("😊"):
+                    all_emojis = [
+                        "❤️","🔥","👍","😂","😍","🙏","🎉","🤝","😊","🥰",
+                        "😎","🤩","🥳","😢","😭","😡","🤔","🫡","👏","💪",
+                        "🌹","💐","🌸","✨","⭐","🌙","☀️","⚡","💎","👑",
+                        "🇹🇯","🇷🇺","🇺🇸","🇺🇿","🇰🇿","🇰🇬","🇹🇷","🇦🇪","🌍","✈️"
+                    ]
+                    for row in range(0, len(all_emojis), 5):
+                        ecols = st.columns(5)
+                        for idx, em in enumerate(all_emojis[row:row+5]):
+                            if ecols[idx].button(em, key=f"em_{rid}_{row}_{idx}"):
+                                st.session_state[f"pending_txt_{rid}"] = st.session_state.get(f"chat_inp_{rid}", "") + em
+                                st.rerun()
 
-            with t_voice:
-                v_idx = st.session_state.get(f"v_key_{rid}", 0)
-                voice_rec = st.audio_input("Записать голосовое", label_visibility="collapsed", key=f"voice_{rid}_{v_idx}")
+            with b2:
+                with st.popover("🎙️"):
+                    v_idx = st.session_state.get(f"v_key_{rid}", 0)
+                    voice_rec = st.audio_input("Запись голоса", label_visibility="collapsed", key=f"voice_{rid}_{v_idx}")
 
-            with t_file:
-                msg_file = st.file_uploader("Фото или видео", type=["jpg", "jpeg", "png", "mp4", "mov", "mp3", "ogg", "wav"], label_visibility="collapsed", key=f"chat_file_{rid}")
-                st.checkbox("🎨 ИИ-улучшение фото", value=True, key=f"ai_ph_{rid}")
+            with b3:
+                with st.popover("📎"):
+                    msg_file = st.file_uploader("Медиа", type=["jpg", "jpeg", "png", "mp4", "mov", "mp3", "ogg", "wav"], label_visibility="collapsed", key=f"chat_file_{rid}")
+                    st.checkbox("🎨 ИИ-улучшение фото", value=True, key=f"ai_ph_{rid}")
 
-            with t_ai:
-                ai_draft = st.text_input("Черновик или текст:", placeholder="Например: чихели корот зурай дар хона", label_visibility="collapsed", key=f"ai_dr_{rid}")
-                ac1, ac2, ac3 = st.columns(3)
-                with ac1:
+            with b4:
+                with st.popover("✨ ИИ"):
+                    ai_draft = st.text_input("Черновик:", placeholder="Например: чихели корот зурай", label_visibility="collapsed", key=f"ai_dr_{rid}")
                     ai_lang = st.selectbox("Язык:", ["Тоҷикӣ (TJ)", "Русский (RU)", "English (EN)", "Oʻzbek (UZ)", "فارسی (FA)", "العربية (AR)", "Türkçe (TR)", "中文 (ZH)"], label_visibility="collapsed", key=f"ai_lg_{rid}")
-                with ac2:
                     ai_style = st.selectbox("Стиль:", ["Вежливый", "Деловой", "Дружеский", "Только перевод"], label_visibility="collapsed", key=f"ai_st_{rid}")
-                with ac3:
-                    if st.button("🪄 Готово", key=f"ai_btn_{rid}"):
+                    if st.button("🪄 Вставить в чат", key=f"ai_btn_{rid}"):
                         raw = ai_draft.strip()
                         if raw:
                             l_code = "tg" if "TJ" in ai_lang else ("ru" if "RU" in ai_lang else ("en" if "EN" in ai_lang else ("uz" if "UZ" in ai_lang else ("fa" if "FA" in ai_lang else ("ar" if "AR" in ai_lang else ("tr" if "TR" in ai_lang else "zh-CN"))))))
                             if ai_style == "Только перевод":
                                 res_txt = ai_translate_text(raw, l_code)
+                            elif "TJ" in ai_lang:
+                                base = ai_translate_text(raw, "tg")
+                                res_txt = f"Ассалому алайкум! {base} Хеле шодам аз ҳамсуҳбатӣ бо шумо." if ai_style == "Вежливый" else (f"Салом. {base} Биёед тафсилотро муҳокима кунем." if ai_style == "Деловой" else f"Салом! 😊 {base} Аҳволат чӣ хел?")
+                            elif "RU" in ai_lang:
+                                base = ai_translate_text(raw, "ru")
+                                res_txt = f"Здравствуйте! {base} Буду рад продолжить общение." if ai_style == "Вежливый" else (f"Добрый день. {base} Давайте обсудим детали." if ai_style == "Деловой" else f"Привет! 😊 {base} Как дела?")
                             else:
-                                if "TJ" in ai_lang:
-                                    base = ai_translate_text(raw, "tg")
-                                    if ai_style == "Вежливый":
-                                        res_txt = f"Ассалому алайкум! {base} Хеле шодам аз ҳамсуҳбатӣ бо шумо."
-                                    elif ai_style == "Деловой":
-                                        res_txt = f"Салом. {base} Биёед тафсилотро муҳокима кунем."
-                                    else:
-                                        res_txt = f"Салом! 😊 {base} Аҳволат чӣ хел?"
-                                elif "RU" in ai_lang:
-                                    base = ai_translate_text(raw, "ru")
-                                    if ai_style == "Вежливый":
-                                        res_txt = f"Здравствуйте! {base} Буду рад продолжить общение."
-                                    elif ai_style == "Деловой":
-                                        res_txt = f"Добрый день. {base} Давайте обсудим детали."
-                                    else:
-                                        res_txt = f"Привет! 😊 {base} Как дела?"
-                                else:
-                                    res_txt = ai_translate_text(raw, l_code)
+                                res_txt = ai_translate_text(raw, l_code)
                             st.session_state[f"pending_txt_{rid}"] = res_txt
                             st.rerun()
 
