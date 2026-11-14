@@ -638,6 +638,37 @@ elif choice == T["chat"]:
             with call_c2:
                 st.link_button("📹 Видеозвонок", f"https://meet.jit.si{rid}")
             
+            if st.session_state.pop(f"clear_inp_{rid}", False):
+                st.session_state[f"chat_inp_{rid}"] = ""
+
+            emo_cols = st.columns(8)
+            emojis = ["❤️", "🔥", "👍", "😂", "😍", "🙏", "🎉", "🤝"]
+            for i, em in enumerate(emojis):
+                if emo_cols[i].button(em, key=f"em_{rid}_{i}"):
+                    st.session_state[f"chat_inp_{rid}"] = st.session_state.get(f"chat_inp_{rid}", "") + em
+                    st.rerun()
+
+            with st.expander("✨ Умный помощник текста и фото (без следов ИИ)"):
+                ai_draft = st.text_input("Напишите черновик или идею ответа:", key=f"ai_dr_{rid}")
+                ai_style = st.selectbox("Стиль ответа:", ["Грамотный и вежливый", "Деловой и уверенный", "Тёплый и дружеский", "Краткий по делу"], key=f"ai_st_{rid}")
+                if st.button("🪄 Сделать текст красивым", key=f"ai_btn_{rid}"):
+                    raw = ai_draft.strip()
+                    if raw:
+                        clean = raw.upper() + raw[1:]
+                        if clean[-1] not in ".!?":
+                            clean += "."
+                        if ai_style == "Грамотный и вежливый":
+                            res_txt = f"Здравствуйте! {clean} Буду рад продолжить общение."
+                        elif ai_style == "Деловой и уверенный":
+                            res_txt = f"Добрый день. {clean} Давайте обсудим детали."
+                        elif ai_style == "Тёплый и дружеский":
+                            res_txt = f"Привет! 😊 {clean} Как твои дела?"
+                        else:
+                            res_txt = clean
+                        st.session_state[f"chat_inp_{rid}"] = res_txt
+                        st.rerun()
+                st.checkbox("🎨 Авто-улучшение фото перед отправкой (чёткость + яркость)", value=True, key=f"ai_ph_{rid}")
+
             voice_rec = st.audio_input("🎙️ Записать голосовое сообщение", key=f"voice_{rid}")
             msg_txt = st.text_input("Написать сообщение...", key=f"chat_inp_{rid}")
             msg_file = st.file_uploader("Прикрепить фото, видео или кружок", key=f"chat_file_{rid}")
@@ -648,7 +679,7 @@ elif choice == T["chat"]:
                         v_data = voice_rec.getvalue()
                         files_p = {"file": ("voice_msg.wav", v_data, "audio/wav")}
                         requests.post(f"{API_URL}/chats/{rid}/send", data={"sender": me, "text": msg_txt.strip() or "🎙️ Голосовое сообщение"}, files=files_p)
-                        st.session_state[f"chat_inp_{rid}"] = ""
+                        st.session_state[f"clear_inp_{rid}"] = True
                         st.rerun()
                     elif msg_txt.strip() or msg_file is not None:
                         files_p = None
@@ -669,7 +700,7 @@ elif choice == T["chat"]:
                                     pass
                             files_p = {"file": (msg_file.name, f_bytes, msg_file.type)}
                         requests.post(f"{API_URL}/chats/{rid}/send", data={"sender": me, "text": msg_txt.strip()}, files=files_p)
-                        st.session_state[f"chat_inp_{rid}"] = ""
+                        st.session_state[f"clear_inp_{rid}"] = True
                         st.rerun()
             with sc2:
                 if st.button("🔄 Обновить", key=f"ref_msg_{rid}"):
