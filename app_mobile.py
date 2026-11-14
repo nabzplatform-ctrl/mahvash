@@ -644,13 +644,32 @@ elif choice == T["chat"]:
             sc1, sc2 = st.columns([3, 1])
             with sc1:
                 if st.button("📨 Отправить", key=f"send_msg_{rid}"):
-                    if voice_rec:
-                        files_p = {"file": ("voice_msg.wav", voice_rec.getvalue(), "audio/wav")}
-                        requests.post(f"{API_URL}/chats/{rid}/send", data={"sender": me, "text": msg_txt or "🎙️ Голосовое сообщение"}, files=files_p)
+                    if voice_rec is not None:
+                        v_data = voice_rec.getvalue()
+                        files_p = {"file": ("voice_msg.wav", v_data, "audio/wav")}
+                        requests.post(f"{API_URL}/chats/{rid}/send", data={"sender": me, "text": msg_txt.strip() or "🎙️ Голосовое сообщение"}, files=files_p)
+                        st.session_state[f"chat_inp_{rid}"] = ""
                         st.rerun()
-                    elif msg_txt.strip() or msg_file:
-                        files_p = {"file": (msg_file.name, msg_file.getvalue(), msg_file.type)} if msg_file else None
-                        requests.post(f"{API_URL}/chats/{rid}/send", data={"sender": me, "text": msg_txt}, files=files_p)
+                    elif msg_txt.strip() or msg_file is not None:
+                        files_p = None
+                        if msg_file is not None:
+                            f_bytes = msg_file.getvalue()
+                            if st.session_state.get(f"ai_ph_{rid}", True) and msg_file.type.startswith("image/"):
+                                try:
+                                    from PIL import Image, ImageEnhance
+                                    import io
+                                    im = Image.open(io.BytesIO(f_bytes)).convert("RGB")
+                                    im = ImageEnhance.Sharpness(im).enhance(1.35)
+                                    im = ImageEnhance.Contrast(im).enhance(1.12)
+                                    im = ImageEnhance.Color(im).enhance(1.15)
+                                    buf = io.BytesIO()
+                                    im.save(buf, format="JPEG", quality=92)
+                                    f_bytes = buf.getvalue()
+                                except Exception:
+                                    pass
+                            files_p = {"file": (msg_file.name, f_bytes, msg_file.type)}
+                        requests.post(f"{API_URL}/chats/{rid}/send", data={"sender": me, "text": msg_txt.strip()}, files=files_p)
+                        st.session_state[f"chat_inp_{rid}"] = ""
                         st.rerun()
             with sc2:
                 if st.button("🔄 Обновить", key=f"ref_msg_{rid}"):
