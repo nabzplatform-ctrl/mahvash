@@ -1062,7 +1062,7 @@ def universal_download_page():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Скачать NABZ — Социальная сеть</title>
-        <link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;NABZ&quot;,&quot;short_name&quot;:&quot;NABZ&quot;,&quot;start_url&quot;:&quot;https://streamlit.app&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230E0E14&quot;,&quot;theme_color&quot;:&quot;%2300F2FE&quot;}">
+        <link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;NABZ&quot;,&quot;short_name&quot;:&quot;NABZ&quot;,&quot;start_url&quot;:&quot;https://nabz-platform.streamlit.app&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230E0E14&quot;,&quot;theme_color&quot;:&quot;%2300F2FE&quot;}">
         <style>
             body {
                 margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -1114,7 +1114,7 @@ def universal_download_page():
                 3. Выберите <b>«На экран „Домой“»</b> — иконка NABZ появится на рабочем столе.
             </div>
 
-            <a href="https://streamlit.app" class="btn btn-web">
+            <a href="https://nabz-platform.streamlit.app" class="btn btn-web">
                 🌐 Открыть / Установить на ПК и iPhone
             </a>
 
