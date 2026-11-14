@@ -8,26 +8,45 @@ def ai_translate_text(text, target_lang="ru"):
         return text
     lang_map = {"tj": "tg", "ru": "ru", "en": "en", "uz": "uz", "kz": "kk", "kg": "ky", "fa": "fa", "ar": "ar", "tr": "tr", "zh": "zh-CN", "es": "es", "de": "de", "fr": "fr"}
     tgt = lang_map.get(target_lang, target_lang)
-    # Способ 1: Прямой надёжный запрос к Google Translate (работает без внешних библиотек и для больших текстов)
+
+    # Автоопределение языка текста (без блокировок Google)
+    t_low = text.lower()
+    if any(ch in t_low for ch in "ғӣқӯҳҷ"):
+        src = "tg"
+    elif any("а" <= ch <= "я" or ch == "ё" for ch in t_low):
+        src = "ru"
+    elif any(ch in t_low for ch in "ğışöüç"):
+        src = "tr"
+    elif any("\u0600" <= ch <= "\u06ff" for ch in t_low):
+        src = "ar"
+    elif any("\u4e00" <= ch <= "\u9fff" for ch in t_low):
+        src = "zh-CN"
+    else:
+        src = "en"
+
+    if src == tgt:
+        src = "en" if tgt != "en" else "ru"
+
+    # Надёжный переводчик MyMemory (50 000 символов/день бесплатно, не банит Streamlit)
     try:
-        r = requests.get(
-            "https://googleapis.com",
-            params={"client": "gtx", "sl": "auto", "tl": tgt, "dt": "t", "q": text},
-            timeout=8
-        )
-        if r.status_code == 200:
-            data = r.json()
-            translated = "".join([part[0] for part in data[0] if part[0]])
-            if translated.strip():
-                return translated
-    except Exception:
-        pass
-    # Способ 2: Резервный через deep_translator
-    try:
-        from deep_translator import GoogleTranslator
-        return GoogleTranslator(source="auto", target=tgt).translate(text)
+        chunks = [text[i:i+450] for i in range(0, len(text), 450)]
+        out_parts = []
+        for ch in chunks:
+            r = requests.get(
+                "https://translated.net",
+                params={"q": ch, "langpair": f"{src}|{tgt}", "de": "nabz.platform@gmail.com"},
+                timeout=8
+            )
+            if r.status_code == 200:
+                res_data = r.json().get("responseData", {})
+                tr_piece = res_data.get("translatedText", "")
+                if tr_piece:
+                    out_parts.append(tr_piece)
+        if out_parts:
+            return " ".join(out_parts)
     except Exception as e:
-        return f"[Ошибка перевода: {e}]"
+        return f"[Ошибка сети: {e}]"
+    return text
 
 st.set_page_config(page_title="NABZ App", page_icon="📱", layout="centered")
 
