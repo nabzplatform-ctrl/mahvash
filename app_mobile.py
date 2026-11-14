@@ -633,16 +633,11 @@ elif choice == T["chat"]:
                 align_style = "border-left: 3px solid #00F2FE; background-color: #1A222D;" if is_me else "border-left: 3px solid #8F9CAF; background-color: #16161E;"
                 st.markdown(f'<div style="{align_style} padding: 8px 12px; border-radius: 10px; margin-bottom: 6px;"><b>@{m["sender_username"]}</b> <small>({m["created_at"]}{read_mark})</small><br>{m.get("text", "")}</div>', unsafe_allow_html=True)
                 if m.get("text"):
-                    tc1, tc2 = st.columns([2, 1])
-                    with tc1:
-                        t_to = st.selectbox("Язык", ["tg (Тоҷикӣ)", "ru (Русский)", "en (English)", "tr (Türkçe)", "uz (Oʻzbek)", "fa (فارسی)", "ar (العربية)", "zh-CN (中文)"], label_visibility="collapsed", key=f"tl_{m['id']}")
-                    with tc2:
-                        if st.button("🌐 Перевод", key=f"tr_btn_{m['id']}"):
-                            lc = t_to.split(" ")
-                            st.session_state[f"tr_out_{m['id']}"] = ai_translate_text(m["text"], lc)
+                    if st.button("🌐", key=f"tr_btn_{m['id']}", help="Перевести сообщение"):
+                        target_c = st.session_state.get(f"chat_tr_lang_{rid}", "tg")
+                        st.session_state[f"tr_out_{m['id']}"] = ai_translate_text(m["text"], target_c)
                     if st.session_state.get(f"tr_out_{m['id']}"):
-                        st.info(f"🌐 {st.session_state[f'tr_out_{m['id']}']}")
-                
+                        st.caption(f"🌐 {st.session_state[f'tr_out_{m['id']}']}")
                 if m.get("media_url"):
                     mtype = m.get("media_type")
                     if mtype == "image":
