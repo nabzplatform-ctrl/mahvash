@@ -1040,3 +1040,96 @@ def admin_ban_toggle(target_username: str):
         raise he
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+from fastapi.responses import FileResponse, HTMLResponse
+
+@app.get("/Nabz.apk")
+def direct_apk_file():
+    if os.path.exists("Nabz.apk"):
+        return FileResponse(
+            path="Nabz.apk",
+            filename="Nabz.apk",
+            media_type="application/vnd.android.package-archive"
+        )
+    raise HTTPException(status_code=404, detail="Файл Nabz.apk не найден на сервере")
+
+@app.get("/download", response_class=HTMLResponse)
+def universal_download_page():
+    return """
+    <!DOCTYPE html>
+    <html lang="ru">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Скачать NABZ — Социальная сеть</title>
+        <link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;NABZ&quot;,&quot;short_name&quot;:&quot;NABZ&quot;,&quot;start_url&quot;:&quot;https://streamlit.app&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;%230E0E14&quot;,&quot;theme_color&quot;:&quot;%2300F2FE&quot;}">
+        <style>
+            body {
+                margin: 0; padding: 20px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+                background: linear-gradient(135deg, #0E0E14 0%, #1d1536 100%);
+                color: #ffffff; display: flex; justify-content: center; align-items: center; min-height: 100vh;
+            }
+            .card {
+                background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.15);
+                border-radius: 24px; padding: 32px 24px; max-width: 420px; width: 100%; text-align: center;
+                box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5); backdrop-filter: blur(12px);
+            }
+            .logo {
+                width: 84px; height: 84px; border-radius: 22px; margin: 0 auto 16px;
+                background: linear-gradient(135deg, #9b51e0, #00f2fe);
+                display: flex; align-items: center; justify-content: center;
+                font-size: 36px; font-weight: 900; color: #fff; box-shadow: 0 8px 25px rgba(155, 81, 224, 0.5);
+            }
+            h1 { margin: 0 0 8px; font-size: 28px; letter-spacing: 1px; }
+            p { color: #b8b8d0; font-size: 15px; margin: 0 0 24px; line-height: 1.5; }
+            .btn {
+                display: block; width: 100%; box-sizing: border-box; padding: 15px 20px; margin-bottom: 12px;
+                border-radius: 14px; font-size: 16px; font-weight: 700; text-decoration: none;
+                transition: transform 0.15s ease; cursor: pointer; border: none;
+            }
+            .btn:active { transform: scale(0.98); }
+            .btn-android { background: linear-gradient(90deg, #00f2fe, #4facfe); color: #0E0E14; }
+            .btn-web { background: rgba(255, 255, 255, 0.12); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.2); }
+            .ios-box {
+                display: none; background: rgba(155, 81, 224, 0.18); border: 1px solid #9b51e0;
+                border-radius: 14px; padding: 14px; margin-bottom: 14px; font-size: 14px; text-align: left; line-height: 1.5;
+            }
+            .platforms { font-size: 12px; color: #8888a8; margin-top: 16px; }
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <div class="logo">N</div>
+            <h1>NABZ</h1>
+            <p>Международная социальная сеть нового поколения. Установите приложение на любое устройство в один клик.</p>
+
+            <a id="androidBtn" href="/Nabz.apk" download="Nabz.apk" class="btn btn-android">
+                📲 Скачать для Android (APK)
+            </a>
+
+            <div id="iosBox" class="ios-box">
+                <b>🍏 Установка на iPhone / iPad:</b><br>
+                1. Нажмите кнопку <b>«Открыть NABZ»</b> ниже.<br>
+                2. Внизу экрана нажмите значок <b>«Поделиться»</b> (квадрат со стрелкой вверх).<br>
+                3. Выберите <b>«На экран „Домой“»</b> — иконка NABZ появится на рабочем столе.
+            </div>
+
+            <a href="https://streamlit.app" class="btn btn-web">
+                🌐 Открыть / Установить на ПК и iPhone
+            </a>
+
+            <div class="platforms">
+                Поддерживается: Android • iOS (iPhone) • Windows • macOS • Linux
+            </div>
+        </div>
+
+        <script>
+            const ua = navigator.userAgent || "";
+            if (/iPhone|iPad|iPod/i.test(ua)) {
+                document.getElementById("iosBox").style.display = "block";
+                document.getElementById("androidBtn").style.display = "none";
+            }
+        </script>
+    </body>
+    </html>
+    """
