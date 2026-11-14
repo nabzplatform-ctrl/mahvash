@@ -23,6 +23,8 @@ st.markdown("""
     [data-testid="stExpander"] { background-color: #15151F !important; border: 1px solid #2D2D44 !important; border-radius: 12px !important; }
     [data-testid="stAlert"] { background-color: #161A24 !important; color: #FFFFFF !important; border: 1px solid #00F2FE !important; border-radius: 12px !important; }
     [data-testid="stAlert"] * { color: #FFFFFF !important; }
+    [data-testid="stAlert"], div[role="alert"] { background-color: #161A24 !important; color: #FFFFFF !important; border: 1px solid #00F2FE !important; border-radius: 12px !important; }
+    [data-testid="stAlert"] *, div[role="alert"] * { color: #FFFFFF !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -541,6 +543,9 @@ elif choice == T["profile"]:
                         st.warning(f"Жалоба #{r['id']} от @{r['reporter_username']} на @{r['target_username']} (Пост #{r['target_post_id']}): {r['reason']} — {r['created_at']}")
 
 elif choice.startswith(T["notifs"]):
+    if st.session_state["username"]:
+        try: requests.post(f"{API_URL}/notifications/read_all/{st.session_state['username']}")
+        except: pass
     st.subheader(T["notifs"])
     if not st.session_state["username"]:
         st.warning("Войдите в аккаунт!")
@@ -629,9 +634,9 @@ elif choice == T["chat"]:
             st.markdown("---")
             call_c1, call_c2 = st.columns(2)
             with call_c1:
-                st.link_button("📞 Аудиозвонок", f"https://jit.si{rid}#config.startWithVideoMuted=true")
+                st.link_button("📞 Аудиозвонок", f"https://meet.jit.si{rid}#config.startWithVideoMuted=true")
             with call_c2:
-                st.link_button("📹 Видеозвонок", f"https://jit.si{rid}")
+                st.link_button("📹 Видеозвонок", f"https://meet.jit.si{rid}")
             
             voice_rec = st.audio_input("🎙️ Записать голосовое сообщение", key=f"voice_{rid}")
             msg_txt = st.text_input("Написать сообщение...", key=f"chat_inp_{rid}")
@@ -789,7 +794,7 @@ elif choice == "🎞️ Reels":
                     st.video(r["media_urls"].split(",")[0])
                 rc1, rc2 = st.columns(2)
                 with rc1:
-                    if st.button(f"❤️ {r.get('likes_count', 0)}", key=f"rl_like_{r['id']}"):
+                    if st.button(f"❤️ {r.get('likes_count', 0)}", key=f"reel_like_fixed_{r['id']}"):
                         if st.session_state["username"]:
                             requests.post(f"{API_URL}/posts/like", json={"post_id": r["id"], "username": st.session_state["username"]})
                             st.rerun()
