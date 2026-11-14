@@ -357,17 +357,17 @@ if choice == T["login"]:
             if l_user:
                 res = requests.post(f"{API_URL}/auth/login", json={"username": l_user, "password": l_pass or "12345"})
                 if res.status_code == 200 and res.text.strip():
-                prof = res.json()["profile"]
-                st.session_state["username"] = prof["username"]
-                if prof.get("language") in ["ru", "tj", "en"]:
-                    st.session_state["lang"] = prof["language"]
-                st.rerun()
-            else:
-                try:
-                    err_msg = res.json().get("detail", "Ошибка входа")
-                except Exception:
-                    err_msg = f"Сервер не отвечает (код {res.status_code}). Проверьте API_URL."
-                st.error(err_msg)
+                    prof = res.json()["profile"]
+                    st.session_state["username"] = prof["username"]
+                    if prof.get("language") in ["ru", "tj", "en"]:
+                        st.session_state["lang"] = prof["language"]
+                    st.rerun()
+                else:
+                    try:
+                        err_msg = res.json().get("detail", "Ошибка входа")
+                    except Exception:
+                        err_msg = f"Сервер не отвечает (код {res.status_code}). Проверьте API_URL."
+                    st.error(err_msg)
                     
     with tab2:
         r_email = st.text_input("Email")
