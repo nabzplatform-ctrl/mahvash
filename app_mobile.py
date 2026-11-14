@@ -6,15 +6,28 @@ API_URL = os.getenv("API_URL", "http://localhost:8000")
 def ai_translate_text(text, target_lang="ru"):
     if not text or not text.strip():
         return text
+    lang_map = {"tj": "tg", "ru": "ru", "en": "en", "uz": "uz", "kz": "kk", "kg": "ky", "fa": "fa", "ar": "ar", "tr": "tr", "zh": "zh-CN", "es": "es", "de": "de", "fr": "fr"}
+    tgt = lang_map.get(target_lang, target_lang)
+    # Способ 1: Прямой надёжный запрос к Google Translate (работает без внешних библиотек и для больших текстов)
+    try:
+        r = requests.get(
+            "https://googleapis.com",
+            params={"client": "gtx", "sl": "auto", "tl": tgt, "dt": "t", "q": text},
+            timeout=8
+        )
+        if r.status_code == 200:
+            data = r.json()
+            translated = "".join([part[0] for part in data[0] if part[0]])
+            if translated.strip():
+                return translated
+    except Exception:
+        pass
+    # Способ 2: Резервный через deep_translator
     try:
         from deep_translator import GoogleTranslator
-        lang_map = {"tj": "tg", "ru": "ru", "en": "en", "uz": "uz", "kz": "kk", "kg": "ky", "fa": "fa", "ar": "ar", "tr": "tr", "zh": "zh-CN", "es": "es", "de": "de", "fr": "fr"}
-        tgt = lang_map.get(target_lang, target_lang)
         return GoogleTranslator(source="auto", target=tgt).translate(text)
-    except Exception:
-        return text
-
-
+    except Exception as e:
+        return f"[Ошибка перевода: {e}]"
 
 st.set_page_config(page_title="NABZ App", page_icon="📱", layout="centered")
 
@@ -633,9 +646,22 @@ elif choice == T["chat"]:
                 align_style = "border-left: 3px solid #00F2FE; background-color: #1A222D;" if is_me else "border-left: 3px solid #8F9CAF; background-color: #16161E;"
                 st.markdown(f'<div style="{align_style} padding: 8px 12px; border-radius: 10px; margin-bottom: 6px;"><b>@{m["sender_username"]}</b> <small>({m["created_at"]}{read_mark})</small><br>{m.get("text", "")}</div>', unsafe_allow_html=True)
                 if m.get("text"):
-                    if st.button("🌐", key=f"tr_btn_{m['id']}", help="Перевести сообщение"):
-                        target_c = st.session_state.get(f"chat_tr_lang_{rid}", "tg")
-                        st.session_state[f"tr_out_{m['id']}"] = ai_translate_text(m["text"], target_c)
+                    with st.popover("🌐"):
+                        langs_menu = {
+                            "🇹🇯 Тоҷикӣ": "tg",
+                            "🇷🇺 Русский": "ru",
+                            "🇺🇸 English": "en",
+                            "🇹🇷 Türkçe": "tr",
+                            "🇺🇿 Oʻzbekcha": "uz",
+                            "🇮🇷 فارسی": "fa",
+                            "🇦🇪 العربية": "ar",
+                            "🇨🇳 中文": "zh-CN",
+                            "🇪🇸 Español": "es",
+                            "🇩🇪 Deutsch": "de"
+                        }
+                        chosen_l = st.selectbox("Перевести на:", list(langs_menu.keys()), key=f"pop_sel_{m['id']}")
+                        if st.button("✅ Перевести текст", key=f"pop_go_{m['id']}"):
+                            st.session_state[f"tr_out_{m['id']}"] = ai_translate_text(m["text"], langs_menu[chosen_l])
                     if st.session_state.get(f"tr_out_{m['id']}"):
                         st.caption(f"🌐 {st.session_state[f'tr_out_{m['id']}']}")
                 if m.get("media_url"):
