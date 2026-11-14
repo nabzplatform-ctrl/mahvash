@@ -3,6 +3,19 @@ import os
 import requests
 API_URL = os.getenv("API_URL", "http://localhost:8000")
 
+def ai_translate_text(text, target_lang="ru"):
+    if not text or not text.strip():
+        return text
+    try:
+        from deep_translator import GoogleTranslator
+        lang_map = {"tj": "tg", "ru": "ru", "en": "en", "uz": "uz", "kz": "kk", "kg": "ky", "fa": "fa", "ar": "ar", "tr": "tr", "zh": "zh-CN", "es": "es", "de": "de", "fr": "fr"}
+        tgt = lang_map.get(target_lang, target_lang)
+        return GoogleTranslator(source="auto", target=tgt).translate(text)
+    except Exception:
+        return text
+
+
+
 st.set_page_config(page_title="NABZ App", page_icon="📱", layout="centered")
 
 st.markdown("""
