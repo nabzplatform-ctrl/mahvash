@@ -70,7 +70,66 @@ st.markdown("""
     [data-testid="stAlert"] * { color: #FFFFFF !important; }
     [data-testid="stAlert"], [data-testid="stAlert"] > div, div[role="alert"], div[role="alert"] > div { background-color: #181C28 !important; color: #FFFFFF !important; border-color: #00F2FE !important; border-radius: 12px !important; }
     [data-testid="stAlert"] *, div[role="alert"] * { color: #FFFFFF !important; }
+
+    /* Скрываем лишние системные элементы Streamlit (Fork, GitHub, меню, красную корону) */
+    #MainMenu, footer, .stDeployButton, [data-testid="stToolbar"], [data-testid="stDecoration"], [data-testid="stStatusWidget"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    /* Делаем кнопку открытия бокового меню яркой и заметной на телефоне */
+    [data-testid="collapsedControl"], button[kind="header"] {
+        background-color: #00F2FE !important;
+        color: #000000 !important;
+        border-radius: 50% !important;
+        width: 40px !important;
+        height: 40px !important;
+        margin: 8px !important;
+        box-shadow: 0 0 12px rgba(0, 242, 254, 0.7) !important;
+    }
+    [data-testid="collapsedControl"] svg {
+        fill: #000000 !important;
+        color: #000000 !important;
+    }
+    /* Каскадные облачка сообщений в чате */
+    .chat-row-me {
+        display: flex;
+        justify-content: flex-start;
+        margin-bottom: 10px;
+    }
+    .chat-row-other {
+        display: flex;
+        justify-content: flex-end;
+        margin-bottom: 10px;
+    }
+    .bubble-me {
+        background: linear-gradient(135deg, #0D3B4C 0%, #114B5F 100%);
+        border: 1px solid #00F2FE;
+        color: #FFFFFF;
+        padding: 10px 14px;
+        border-radius: 18px 18px 18px 4px;
+        max-width: 82%;
+        box-shadow: 0 2px 8px rgba(0, 242, 254, 0.15);
+    }
+    .bubble-other {
+        background: #1E1E2E;
+        border: 1px solid #3A3A52;
+        color: #FFFFFF;
+        padding: 10px 14px;
+        border-radius: 18px 18px 4px 18px;
+        max-width: 82%;
+    }
+    .chat-header-card {
+        background: #161622;
+        border: 1px solid #2D2D44;
+        border-radius: 16px;
+        padding: 12px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
 </style>
+
 """, unsafe_allow_html=True)
 
 LANG_TEXT = {
@@ -155,6 +214,20 @@ T = LANG_TEXT[st.session_state["lang"]]
 
 st.markdown('<div class="phone-header">⚡ NABZ</div>', unsafe_allow_html=True)
 st.markdown(f'<div class="phone-slogan">{T["slogan"]}</div>', unsafe_allow_html=True)
+
+# Быстрая мобильная панель навигации в 1 касание
+qn1, qn2, qn3, qn4, qn5 = st.columns(5)
+if qn1.button("🏠", key="quick_nav_feed", help="Общая лента"):
+    st.session_state["nav_override"] = T["feed"]
+if qn2.button("🎞️", key="quick_nav_reels", help="Reels и видео"):
+    st.session_state["nav_override"] = "🎞️ Reels"
+if qn3.button("➕", key="quick_nav_create", help="Создать пост"):
+    st.session_state["nav_override"] = T["create"]
+if qn4.button("💬", key="quick_nav_chat", help="Чат"):
+    st.session_state["nav_override"] = T["chat"]
+if qn5.button("👤", key="quick_nav_prof", help="Мой профиль"):
+    st.session_state["nav_override"] = T["profile"]
+
 
 unread_count = 0
 if st.session_state["username"]:
@@ -659,30 +732,56 @@ elif choice == T["chat"]:
             
             if not msgs:
                 st.caption("Сообщений пока нет. Напишите первым!")
+            # Шапка собеседника с аватаркой и настроением
+            if not active_room.get("is_group"):
+                others = [x for x in active_room["members"].split(",") if x != me]
+                partner_name = others[0] if others else me
+                p_avatar = "https://flaticon.com"
+                p_mood = "😊 На связи в NABZ"
+                try:
+                    p_info = requests.get(f"{API_URL}/profile/{partner_name}", timeout=4)
+                    if p_info.status_code == 200 and p_info.json().get("status") == "success":
+                        pdata = p_info.json()["profile"]
+                        if pdata.get("avatar_url"):
+                            p_avatar = pdata["avatar_url"]
+                        if pdata.get("bio"):
+                            p_mood = pdata["bio"][:60]
+                except Exception:
+                    pass
+                st.markdown(f'''
+                <div class="chat-header-card">
+                    <img src="{p_avatar}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid #00F2FE;">
+                    <div>
+                        <div style="font-weight:bold; font-size:16px; color:#FFFFFF;">@{partner_name}</div>
+                        <div style="font-size:12px; color:#00F2FE;">✨ {p_mood}</div>
+                    </div>
+                </div>
+                ''', unsafe_allow_html=True)
+
+            group_palette = ["#2A1B3D", "#1B3B36", "#3D2B1F", "#1F2A44", "#3B1E32", "#263829"]
             for m in msgs:
-                is_me = (m["sender_username"] == me)
+                sender = m["sender_username"]
+                is_me = (sender == me)
                 read_mark = " ✓✓" if (is_me and m.get("is_read")) else (" ✓" if is_me else "")
-                align_style = "border-left: 3px solid #00F2FE; background-color: #1A222D;" if is_me else "border-left: 3px solid #8F9CAF; background-color: #16161E;"
-                st.markdown(f'<div style="{align_style} padding: 8px 12px; border-radius: 10px; margin-bottom: 6px;"><b>@{m["sender_username"]}</b> <small>({m["created_at"]}{read_mark})</small><br>{m.get("text", "")}</div>', unsafe_allow_html=True)
-                if m.get("text"):
-                    with st.popover("🌐"):
-                        langs_menu = {
-                            "🇹🇯 Тоҷикӣ": "tg",
-                            "🇷🇺 Русский": "ru",
-                            "🇺🇸 English": "en",
-                            "🇹🇷 Türkçe": "tr",
-                            "🇺🇿 Oʻzbekcha": "uz",
-                            "🇮🇷 فارسی": "fa",
-                            "🇦🇪 العربية": "ar",
-                            "🇨🇳 中文": "zh-CN",
-                            "🇪🇸 Español": "es",
-                            "🇩🇪 Deutsch": "de"
-                        }
-                        chosen_l = st.selectbox("Перевести на:", list(langs_menu.keys()), key=f"pop_sel_{m['id']}")
-                        if st.button("✅ Перевести текст", key=f"pop_go_{m['id']}"):
-                            st.session_state[f"tr_out_{m['id']}"] = ai_translate_text(m["text"], langs_menu[chosen_l])
-                    if st.session_state.get(f"tr_out_{m['id']}"):
-                        st.caption(f"🌐 {st.session_state[f'tr_out_{m['id']}']}")
+                if is_me:
+                    st.markdown(f'''
+                    <div class="chat-row-me">
+                        <div class="bubble-me">
+                            <div style="font-size:11px; color:#00F2FE; margin-bottom:2px;"><b>Вы</b> • {m["created_at"]}{read_mark}</div>
+                            <div style="font-size:15px;">{m.get("text", "")}</div>
+                        </div>
+                    </div>
+                    ''', unsafe_allow_html=True)
+                else:
+                    g_color = group_palette[sum(ord(ch) for ch in sender) % len(group_palette)]
+                    st.markdown(f'''
+                    <div class="chat-row-other">
+                        <div class="bubble-other" style="background:{g_color}; border-color:#5A5A7A;">
+                            <div style="font-size:11px; color:#FFD166; margin-bottom:2px;"><b>@{sender}</b> • {m["created_at"]}</div>
+                            <div style="font-size:15px;">{m.get("text", "")}</div>
+                        </div>
+                    </div>
+                    ''', unsafe_allow_html=True)
                 if m.get("media_url"):
                     mtype = m.get("media_type")
                     if mtype == "image":
