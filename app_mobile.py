@@ -761,33 +761,33 @@ elif choice == T["chat"]:
             chat_box = st.container(height=400)
             with chat_box:
             
-            if not msgs:
-                st.caption("Сообщений пока нет. Напишите первым!")
-            # Шапка собеседника с аватаркой и настроением
-            if not active_room.get("is_group"):
-                others = [x for x in active_room["members"].split(",") if x != me]
-                partner_name = others[0] if others else me
-                p_avatar = "https://flaticon.com"
-                p_mood = "😊 На связи в NABZ"
-                try:
-                    p_info = requests.get(f"{API_URL}/profile/{partner_name}", timeout=4)
-                    if p_info.status_code == 200 and p_info.json().get("status") == "success":
-                        pdata = p_info.json()["profile"]
-                        if pdata.get("avatar_url"):
-                            p_avatar = pdata["avatar_url"]
-                        if pdata.get("bio"):
-                            p_mood = pdata["bio"][:60]
-                except Exception:
-                    pass
-                st.markdown(f'''
-                <div class="chat-header-card">
-                    <img src="{p_avatar}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid #00F2FE;">
-                    <div>
-                        <div style="font-weight:bold; font-size:16px; color:#FFFFFF;">@{partner_name}</div>
-                        <div style="font-size:12px; color:#00F2FE;">✨ {p_mood}</div>
+                if not msgs:
+                    st.caption("Сообщений пока нет. Напишите первым!")
+                # Шапка собеседника с аватаркой и настроением
+                if not active_room.get("is_group"):
+                    others = [x for x in active_room["members"].split(",") if x != me]
+                    partner_name = others[0] if others else me
+                    p_avatar = "https://flaticon.com"
+                    p_mood = "😊 На связи в NABZ"
+                    try:
+                        p_info = requests.get(f"{API_URL}/profile/{partner_name}", timeout=4)
+                        if p_info.status_code == 200 and p_info.json().get("status") == "success":
+                            pdata = p_info.json()["profile"]
+                            if pdata.get("avatar_url"):
+                                p_avatar = pdata["avatar_url"]
+                            if pdata.get("bio"):
+                                p_mood = pdata["bio"][:60]
+                    except Exception:
+                        pass
+                    st.markdown(f'''
+                    <div class="chat-header-card">
+                        <img src="{p_avatar}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid #00F2FE;">
+                        <div>
+                            <div style="font-weight:bold; font-size:16px; color:#FFFFFF;">@{partner_name}</div>
+                            <div style="font-size:12px; color:#00F2FE;">✨ {p_mood}</div>
+                        </div>
                     </div>
-                </div>
-                ''', unsafe_allow_html=True)
+                    ''', unsafe_allow_html=True)
 
                 group_palette = ["#2A1B3D", "#1B3B36", "#3D2B1F", "#1F2A44", "#3B1E32", "#263829"]
                 for m in msgs:
