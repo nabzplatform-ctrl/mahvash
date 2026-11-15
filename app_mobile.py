@@ -201,38 +201,35 @@ st.markdown(f'<div class="phone-slogan">{T["slogan"]}</div>', unsafe_allow_html=
 if st.session_state["username"]:
     st.markdown('''
     <style>
-        /* Отступ снизу страницы, чтобы контент не перекрывался нижней панелью */
         .block-container { padding-bottom: 85px !important; }
-        /* Закрепляем блок нижней навигации внизу экрана в 1 горизонтальный ряд */
-        div[data-testid="stHorizontalBlock"]:has(button[key*="quick_nav_"]),
-        div[data-testid="stHorizontalBlock"]:first-of-type {
+        /* Закрепляем ТОЛЬКО нижнюю панель навигации NABZ */
+        div[data-testid="stHorizontalBlock"]:has(button[key*="quick_nav_"]) {
             position: fixed !important;
             bottom: 0 !important;
             left: 0 !important;
             right: 0 !important;
-            z-index: 99999 !important;
+            z-index: 9999 !important;
             background: #12121A !important;
             border-top: 1px solid #00F2FE !important;
-            padding: 6px 8px !important;
+            padding: 6px 10px !important;
             display: flex !important;
             flex-direction: row !important;
             flex-wrap: nowrap !important;
             justify-content: space-around !important;
             align-items: center !important;
-            gap: 4px !important;
         }
-        div[data-testid="stHorizontalBlock"]:first-of-type > div {
-            width: 19% !important;
-            min-width: 19% !important;
-            flex: 1 1 19% !important;
+        div[data-testid="stHorizontalBlock"]:has(button[key*="quick_nav_"]) > div {
+            width: 18% !important;
+            min-width: 18% !important;
+            flex: 1 1 18% !important;
         }
-        div[data-testid="stHorizontalBlock"]:first-of-type button {
+        div[data-testid="stHorizontalBlock"]:has(button[key*="quick_nav_"]) button {
             background: #1C1C28 !important;
             color: #FFFFFF !important;
             border: 1px solid #2E2E42 !important;
             border-radius: 12px !important;
             padding: 6px 0 !important;
-            font-size: 20px !important;
+            font-size: 18px !important;
         }
     </style>
     ''', unsafe_allow_html=True)
@@ -761,6 +758,8 @@ elif choice == T["chat"]:
             st.markdown("---")
             m_res = requests.get(f"{API_URL}/chats/{rid}/messages", params={"viewer": me})
             msgs = m_res.json().get("messages", []) if m_res.status_code == 200 else []
+            chat_box = st.container(height=400)
+            with chat_box:
             
             if not msgs:
                 st.caption("Сообщений пока нет. Напишите первым!")
@@ -790,47 +789,47 @@ elif choice == T["chat"]:
                 </div>
                 ''', unsafe_allow_html=True)
 
-            group_palette = ["#2A1B3D", "#1B3B36", "#3D2B1F", "#1F2A44", "#3B1E32", "#263829"]
-            for m in msgs:
-                sender = m["sender_username"]
-                is_me = (sender == me)
-                read_mark = " ✓✓" if (is_me and m.get("is_read")) else (" ✓" if is_me else "")
-                if is_me:
-                    st.markdown(f'''
-                    <div class="chat-row-me">
-                        <div class="bubble-me">
-                            <div style="font-size:11px; color:#00F2FE; margin-bottom:2px;"><b>Вы</b> • {m["created_at"]}{read_mark}</div>
-                            <div style="font-size:15px;">{m.get("text", "")}</div>
+                group_palette = ["#2A1B3D", "#1B3B36", "#3D2B1F", "#1F2A44", "#3B1E32", "#263829"]
+                for m in msgs:
+                    sender = m["sender_username"]
+                    is_me = (sender == me)
+                    read_mark = " ✓✓" if (is_me and m.get("is_read")) else (" ✓" if is_me else "")
+                    if is_me:
+                        st.markdown(f'''
+                        <div class="chat-row-me">
+                            <div class="bubble-me">
+                                <div style="font-size:11px; color:#00F2FE; margin-bottom:2px;"><b>Вы</b> • {m["created_at"]}{read_mark}</div>
+                                <div style="font-size:15px;">{m.get("text", "")}</div>
+                            </div>
                         </div>
-                    </div>
-                    ''', unsafe_allow_html=True)
-                else:
-                    g_color = group_palette[sum(ord(ch) for ch in sender) % len(group_palette)]
-                    st.markdown(f'''
-                    <div class="chat-row-other">
-                        <div class="bubble-other" style="background:{g_color}; border-color:#5A5A7A;">
-                            <div style="font-size:11px; color:#FFD166; margin-bottom:2px;"><b>@{sender}</b> • {m["created_at"]}</div>
-                            <div style="font-size:15px;">{m.get("text", "")}</div>
-                        </div>
-                    </div>
-                    ''', unsafe_allow_html=True)
-                if m.get("media_url"):
-                    mtype = m.get("media_type")
-                    if mtype == "image":
-                        st.image(m["media_url"], width=260)
-                    elif mtype == "video":
-                        st.video(m["media_url"])
-                    elif mtype == "audio":
-                        st.audio(m["media_url"])
+                        ''', unsafe_allow_html=True)
                     else:
-                        st.link_button("📎 Скачать прикреплённый файл", m["media_url"])
+                        g_color = group_palette[sum(ord(ch) for ch in sender) % len(group_palette)]
+                        st.markdown(f'''
+                        <div class="chat-row-other">
+                            <div class="bubble-other" style="background:{g_color}; border-color:#5A5A7A;">
+                                <div style="font-size:11px; color:#FFD166; margin-bottom:2px;"><b>@{sender}</b> • {m["created_at"]}</div>
+                                <div style="font-size:15px;">{m.get("text", "")}</div>
+                            </div>
+                        </div>
+                        ''', unsafe_allow_html=True)
+                    if m.get("media_url"):
+                        mtype = m.get("media_type")
+                        if mtype == "image":
+                            st.image(m["media_url"], width=260)
+                        elif mtype == "video":
+                            st.video(m["media_url"])
+                        elif mtype == "audio":
+                            st.audio(m["media_url"])
+                        else:
+                            st.link_button("📎 Скачать прикреплённый файл", m["media_url"])
                         
-            st.markdown("---")
-            call_c1, call_c2 = st.columns(2)
-            with call_c1:
-                st.link_button("📞 Аудиозвонок", f"https://meet.jit.si{rid}#config.startWithVideoMuted=true")
-            with call_c2:
-                st.link_button("📹 Видеозвонок", f"https://meet.jit.si{rid}")
+                st.markdown("---")
+                call_c1, call_c2 = st.columns(2)
+                with call_c1:
+                    st.link_button("📞 Аудиозвонок", f"https://meet.jit.si{rid}#config.startWithVideoMuted=true")
+                with call_c2:
+                    st.link_button("📹 Видеозвонок", f"https://meet.jit.si{rid}")
             
             if st.session_state.pop(f"clear_inp_{rid}", False):
                 st.session_state[f"chat_inp_{rid}"] = ""
