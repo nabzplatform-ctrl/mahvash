@@ -8,45 +8,27 @@ def ai_translate_text(text, target_lang="ru"):
         return text
     lang_map = {"tj": "tg", "ru": "ru", "en": "en", "uz": "uz", "kz": "kk", "kg": "ky", "fa": "fa", "ar": "ar", "tr": "tr", "zh": "zh-CN", "es": "es", "de": "de", "fr": "fr"}
     tgt = lang_map.get(target_lang, target_lang)
-
-    # Автоопределение языка текста (без блокировок Google)
-    t_low = text.lower()
-    if any(ch in t_low for ch in "ғӣқӯҳҷ"):
-        src = "tg"
-    elif any("а" <= ch <= "я" or ch == "ё" for ch in t_low):
-        src = "ru"
-    elif any(ch in t_low for ch in "ğışöüç"):
-        src = "tr"
-    elif any("\u0600" <= ch <= "\u06ff" for ch in t_low):
-        src = "ar"
-    elif any("\u4e00" <= ch <= "\u9fff" for ch in t_low):
-        src = "zh-CN"
-    else:
-        src = "en"
-
-    if src == tgt:
-        src = "en" if tgt != "en" else "ru"
-
-    # Надёжный переводчик MyMemory (50 000 символов/день бесплатно, не банит Streamlit)
     try:
-        chunks = [text[i:i+450] for i in range(0, len(text), 450)]
-        out_parts = []
-        for ch in chunks:
-            r = requests.get(
-                "https://translated.net",
-                params={"q": ch, "langpair": f"{src}|{tgt}", "de": "nabz.platform@gmail.com"},
-                timeout=8
-            )
-            if r.status_code == 200:
-                res_data = r.json().get("responseData", {})
-                tr_piece = res_data.get("translatedText", "")
-                if tr_piece:
-                    out_parts.append(tr_piece)
-        if out_parts:
-            return " ".join(out_parts)
-    except Exception as e:
-        return f"[Ошибка сети: {e}]"
-    return text
+        r = requests.get(
+            "https://google.com",
+            params={"client": "dict-chrome-ex", "sl": "auto", "tl": tgt, "q": text},
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=6
+        )
+        if r.status_code == 200 and r.text.strip():
+            data = r.json()
+            if isinstance(data, list) and len(data) > 0:
+                first = data
+                if isinstance(first, list):
+                    return str(first)
+                return str(first)
+    except Exception:
+        pass
+    try:
+        from deep_translator import GoogleTranslator
+        return GoogleTranslator(source="auto", target=tgt).translate(text)
+    except Exception:
+        return text
 
 st.set_page_config(page_title="NABZ App", page_icon="📱", layout="centered")
 
@@ -199,7 +181,7 @@ LANG_TEXT = {
 }
 
 if "username" not in st.session_state:
-    st.session_state["username"] = None
+    st.session_state["username"] = st.query_params.get("u", None)
 if "lang" not in st.session_state:
     st.session_state["lang"] = "ru"
 if "feed_limit" not in st.session_state:
@@ -215,18 +197,61 @@ T = LANG_TEXT[st.session_state["lang"]]
 st.markdown('<div class="phone-header">⚡ NABZ</div>', unsafe_allow_html=True)
 st.markdown(f'<div class="phone-slogan">{T["slogan"]}</div>', unsafe_allow_html=True)
 
-# Быстрая мобильная панель навигации в 1 касание
-qn1, qn2, qn3, qn4, qn5 = st.columns(5)
-if qn1.button("🏠", key="quick_nav_feed", help="Общая лента"):
-    st.session_state["nav_override"] = T["feed"]
-if qn2.button("🎞️", key="quick_nav_reels", help="Reels и видео"):
-    st.session_state["nav_override"] = "🎞️ Reels"
-if qn3.button("➕", key="quick_nav_create", help="Создать пост"):
-    st.session_state["nav_override"] = T["create"]
-if qn4.button("💬", key="quick_nav_chat", help="Чат"):
-    st.session_state["nav_override"] = T["chat"]
-if qn5.button("👤", key="quick_nav_prof", help="Мой профиль"):
-    st.session_state["nav_override"] = T["profile"]
+# Нижняя фиксированная панель навигации (показывается только после входа в аккаунт)
+if st.session_state["username"]:
+    st.markdown('''
+    <style>
+        /* Отступ снизу страницы, чтобы контент не перекрывался нижней панелью */
+        .block-container { padding-bottom: 85px !important; }
+        /* Закрепляем блок нижней навигации внизу экрана в 1 горизонтальный ряд */
+        div[data-testid="stHorizontalBlock"]:has(button[key*="quick_nav_"]),
+        div[data-testid="stHorizontalBlock"]:first-of-type {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            z-index: 99999 !important;
+            background: #12121A !important;
+            border-top: 1px solid #00F2FE !important;
+            padding: 6px 8px !important;
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: nowrap !important;
+            justify-content: space-around !important;
+            align-items: center !important;
+            gap: 4px !important;
+        }
+        div[data-testid="stHorizontalBlock"]:first-of-type > div {
+            width: 19% !important;
+            min-width: 19% !important;
+            flex: 1 1 19% !important;
+        }
+        div[data-testid="stHorizontalBlock"]:first-of-type button {
+            background: #1C1C28 !important;
+            color: #FFFFFF !important;
+            border: 1px solid #2E2E42 !important;
+            border-radius: 12px !important;
+            padding: 6px 0 !important;
+            font-size: 20px !important;
+        }
+    </style>
+    ''', unsafe_allow_html=True)
+    qn1, qn2, qn3, qn4, qn5 = st.columns(5)
+    if qn1.button("🏠", key="quick_nav_feed", help="Лента"):
+        st.session_state["nav_override"] = T["feed"]
+        st.rerun()
+    if qn2.button("🎞️", key="quick_nav_reels", help="Reels"):
+        st.session_state["nav_override"] = "🎞️ Reels"
+        st.rerun()
+    if qn3.button("➕", key="quick_nav_create", help="Пост"):
+        st.session_state["nav_override"] = T["create"]
+        st.rerun()
+    if qn4.button("💬", key="quick_nav_chat", help="Чат"):
+        st.session_state["nav_override"] = T["chat"]
+        st.rerun()
+    if qn5.button("👤", key="quick_nav_prof", help="Профиль"):
+        st.session_state["nav_override"] = T["profile"]
+        st.rerun()
 
 
 unread_count = 0
@@ -253,6 +278,7 @@ if st.session_state["username"]:
     st.sidebar.success(f"@{st.session_state['username']}")
     if st.sidebar.button(T["logout"]):
         st.session_state["username"] = None
+        st.query_params.clear()
         st.rerun()
 else:
     st.sidebar.warning("Guest Mode / Режим гостя")
@@ -462,6 +488,7 @@ if choice == T["login"]:
                 if res.status_code == 200 and res.text.strip():
                     prof = res.json()["profile"]
                     st.session_state["username"] = prof["username"]
+                    st.query_params["u"] = prof["username"]
                     if prof.get("language") in ["ru", "tj", "en"]:
                         st.session_state["lang"] = prof["language"]
                     st.rerun()
@@ -491,6 +518,7 @@ if choice == T["login"]:
                 res = requests.post(f"{API_URL}/auth/register", json=payload)
                 if res.status_code == 200:
                     st.session_state["username"] = res.json()["username"]
+                    st.query_params["u"] = res.json()["username"]
                     st.success("Добро пожаловать в NABZ!")
                     st.rerun()
                 else:
@@ -632,7 +660,11 @@ elif choice == T["profile"]:
                 st.markdown("---")
                 fn = st.text_input("Имя", value=prof.get("first_name", ""))
                 ln = st.text_input("Фамилия", value=prof.get("last_name", ""))
-                bio = st.text_area("О себе (Био)", value=prof.get("bio", ""))
+                mood_presets = ["Свой текст (из поля ниже)", "😊 В отличном настроении", "💼 Занят / На работе", "🚀 Развиваю NABZ", "☕ Отдыхаю", "✈️ В дороге", "📚 Учусь"]
+                quick_mood = st.selectbox("✨ Быстрое настроение (видно в чате):", mood_presets, key="quick_mood_sel")
+                bio = st.text_area("О себе / Своё настроение", value=prof.get("bio", ""))
+                if quick_mood != "Свой текст (из поля ниже)":
+                    bio = quick_mood
                 priv = st.checkbox("🔒 Закрытый (приватный) аккаунт — посты видят только подписчики", value=prof.get("is_private", False))
                 if st.button("💾 Сохранить настройки"):
                     requests.put(f"{API_URL}/profile/{uname}", json={"first_name": fn, "last_name": ln, "bio": bio, "language": st.session_state["lang"], "is_private": priv})
