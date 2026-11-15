@@ -195,59 +195,32 @@ T = LANG_TEXT[st.session_state["lang"]]
 st.markdown('<div class="phone-header">⚡ NABZ</div>', unsafe_allow_html=True)
 st.markdown(f'<div class="phone-slogan">{T["slogan"]}</div>', unsafe_allow_html=True)
 
-# Нижняя фиксированная панель навигации (показывается только после входа в аккаунт)
+# Жёстко закреплённая нижняя панель навигации (в 1 ряд внизу экрана)
 if st.session_state["username"]:
-    st.markdown('''
+    u_now = st.session_state["username"]
+    st.markdown(f"""
     <style>
-        .block-container { padding-bottom: 85px !important; }
-        /* Закрепляем ТОЛЬКО нижнюю панель навигации NABZ */
-        div[data-testid="stHorizontalBlock"]:has(button[key*="quick_nav_"]) {
-            position: fixed !important;
-            bottom: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            z-index: 9999 !important;
-            background: #12121A !important;
-            border-top: 1px solid #00F2FE !important;
-            padding: 6px 10px !important;
-            display: flex !important;
-            flex-direction: row !important;
-            flex-wrap: nowrap !important;
-            justify-content: space-around !important;
-            align-items: center !important;
-        }
-        div[data-testid="stHorizontalBlock"]:has(button[key*="quick_nav_"]) > div {
-            width: 18% !important;
-            min-width: 18% !important;
-            flex: 1 1 18% !important;
-        }
-        div[data-testid="stHorizontalBlock"]:has(button[key*="quick_nav_"]) button {
-            background: #1C1C28 !important;
-            color: #FFFFFF !important;
-            border: 1px solid #2E2E42 !important;
-            border-radius: 12px !important;
-            padding: 6px 0 !important;
-            font-size: 18px !important;
-        }
+        .block-container {{ padding-bottom: 85px !important; }}
+        details, summary, [data-testid="stExpander"] summary {{ background-color: #161622 !important; color: #FFFFFF !important; }}
+        .nabz-bottom-bar {{
+            position: fixed; bottom: 0; left: 0; right: 0; height: 58px;
+            background: #12121A; border-top: 2px solid #00F2FE;
+            display: flex; flex-direction: row; justify-content: space-around; align-items: center;
+            z-index: 999999; box-shadow: 0 -4px 15px rgba(0,0,0,0.9);
+        }}
+        .nabz-bottom-bar a {{
+            text-decoration: none; font-size: 22px; padding: 6px 12px;
+            border-radius: 12px; background: #1B1B26; border: 1px solid #2D2D44;
+        }}
     </style>
-    ''', unsafe_allow_html=True)
-    qn1, qn2, qn3, qn4, qn5 = st.columns(5)
-    if qn1.button("🏠", key="quick_nav_feed", help="Лента"):
-        st.session_state["nav_override"] = T["feed"]
-        st.rerun()
-    if qn2.button("🎞️", key="quick_nav_reels", help="Reels"):
-        st.session_state["nav_override"] = "🎞️ Reels"
-        st.rerun()
-    if qn3.button("➕", key="quick_nav_create", help="Пост"):
-        st.session_state["nav_override"] = T["create"]
-        st.rerun()
-    if qn4.button("💬", key="quick_nav_chat", help="Чат"):
-        st.session_state["nav_override"] = T["chat"]
-        st.rerun()
-    if qn5.button("👤", key="quick_nav_prof", help="Профиль"):
-        st.session_state["nav_override"] = T["profile"]
-        st.rerun()
-
+    <div class="nabz-bottom-bar">
+        <a href="?u={u_now}&p=feed" target="_self">🏠</a>
+        <a href="?u={u_now}&p=reels" target="_self">🎞️</a>
+        <a href="?u={u_now}&p=create" target="_self">➕</a>
+        <a href="?u={u_now}&p=chat" target="_self">💬</a>
+        <a href="?u={u_now}&p=profile" target="_self">👤</a>
+    </div>
+    """, unsafe_allow_html=True)
 
 unread_count = 0
 if st.session_state["username"]:
@@ -267,7 +240,12 @@ if st.session_state["username"]:
         pass
 
 menu = [T["login"], T["feed"], "🎯 Для вас", "🎞️ Reels", "🔥 Explore", "🔍 Поиск людей", T["subs"], T["bookmarks"], T["create"], T["drafts"], T["profile"], notif_label, T["chat"]]
-choice = st.sidebar.radio(T["nav"], menu)
+p_param = st.query_params.get("p", "")
+page_map = {"feed": T["feed"], "reels": "🎞️ Reels", "create": T["create"], "chat": T["chat"], "profile": T["profile"]}
+if p_param in page_map and page_map[p_param] in menu:
+    choice = st.sidebar.radio(T["nav"], menu, index=menu.index(page_map[p_param]))
+else:
+    choice = st.sidebar.radio(T["nav"], menu)
 
 if st.session_state["username"]:
     st.sidebar.success(f"@{st.session_state['username']}")
@@ -484,6 +462,7 @@ if choice == T["login"]:
                     prof = res.json()["profile"]
                     st.session_state["username"] = prof["username"]
                     st.query_params["u"] = prof["username"]
+                    st.query_params["u"] = prof["username"]
                     if prof.get("language") in ["ru", "tj", "en"]:
                         st.session_state["lang"] = prof["language"]
                     st.rerun()
@@ -513,6 +492,7 @@ if choice == T["login"]:
                 res = requests.post(f"{API_URL}/auth/register", json=payload)
                 if res.status_code == 200:
                     st.session_state["username"] = res.json()["username"]
+                    st.query_params["u"] = res.json()["username"]
                     st.query_params["u"] = res.json()["username"]
                     st.success("Добро пожаловать в NABZ!")
                     st.rerun()
@@ -593,7 +573,7 @@ elif choice == T["create"]:
         c_pub, c_dr = st.columns(2)
         with c_pub:
             if st.button("🚀 Опубликовать"):
-                f_pay = [("files", (f.name, f.getvalue(), f.type)) for f in files] if files else []
+                f_pay = [("files", (f"media_{idx}.{f.name.split('.')[-1]}", f.getvalue(), f.type)) for f in files] if files else []
                 res = requests.post(f"{API_URL}/posts/create_with_media", data={"text": text, "username": st.session_state["username"], "is_draft": False}, files=f_pay)
                 if res.status_code == 200:
                     latest_p = requests.get(f"{API_URL}/posts/list", params={"limit": 1, "feed_mode": "all"}).json().get("posts", [])
@@ -604,7 +584,7 @@ elif choice == T["create"]:
                     st.error(res.json().get("detail", "Ошибка публикации"))
         with c_dr:
             if st.button("📝 В черновики"):
-                f_pay = [("files", (f.name, f.getvalue(), f.type)) for f in files] if files else []
+                f_pay = [("files", (f"media_{idx}.{f.name.split('.')[-1]}", f.getvalue(), f.type)) for f in files] if files else []
                 res = requests.post(f"{API_URL}/posts/create_with_media", data={"text": text, "username": st.session_state["username"], "is_draft": True}, files=f_pay)
                 if res.status_code == 200:
                     latest_p = requests.get(f"{API_URL}/posts/list", params={"limit": 1, "feed_mode": "drafts", "viewer": st.session_state["username"]}).json().get("posts", [])
@@ -1045,9 +1025,9 @@ elif choice == "🎞️ Reels":
             r_cov = st.file_uploader("Выберите обложку / превью (необязательно)", type=["jpg", "png"], key="reel_cov")
             if st.button("🔥 Опубликовать Reel"):
                 if r_vid:
-                    files_data = {"video_file": (r_vid.name, r_vid.getvalue(), r_vid.type)}
+                    files_data = {"video_file": (f"reel.{r_vid.name.split('.')[-1]}", r_vid.getvalue(), r_vid.type)}
                     if r_cov:
-                        files_data["cover_file"] = (r_cov.name, r_cov.getvalue(), r_cov.type)
+                        files_data["cover_file"] = (f"cover.{r_cov.name.split('.')[-1]}", r_cov.getvalue(), r_cov.type)
                     res = requests.post(
                         f"{API_URL}/posts/create_reel",
                         data={"text": r_text, "username": st.session_state["username"], "is_reel": True},
