@@ -9,26 +9,22 @@ def ai_translate_text(text, target_lang="ru"):
     lang_map = {"tj": "tg", "ru": "ru", "en": "en", "uz": "uz", "kz": "kk", "kg": "ky", "fa": "fa", "ar": "ar", "tr": "tr", "zh": "zh-CN", "es": "es", "de": "de", "fr": "fr"}
     tgt = lang_map.get(target_lang, target_lang)
     try:
-        r = requests.get(
-            "https://google.com",
-            params={"client": "dict-chrome-ex", "sl": "auto", "tl": tgt, "q": text},
-            headers={"User-Agent": "Mozilla/5.0"},
-            timeout=6
-        )
-        if r.status_code == 200 and r.text.strip():
-            data = r.json()
-            if isinstance(data, list) and len(data) > 0:
-                first = data
-                if isinstance(first, list):
-                    return str(first)
-                return str(first)
-    except Exception:
-        pass
-    try:
         from deep_translator import GoogleTranslator
         return GoogleTranslator(source="auto", target=tgt).translate(text)
     except Exception:
-        return text
+        pass
+    try:
+        r = requests.get(
+            "https://googleapis.com",
+            params={"client": "gtx", "sl": "auto", "tl": tgt, "dt": "t", "q": text},
+            timeout=6
+        )
+        if r.status_code == 200:
+            data = r.json()
+            return "".join([x[0] for x in data[0] if x[0]])
+    except Exception:
+        pass
+    return text
 
 st.set_page_config(page_title="NABZ App", page_icon="📱", layout="centered")
 
@@ -110,6 +106,8 @@ st.markdown("""
         align-items: center;
         gap: 12px;
     }
+
+    details, summary, [data-testid="stExpander"] summary { background-color: #161622 !important; color: #FFFFFF !important; }
 </style>
 
 """, unsafe_allow_html=True)
@@ -755,82 +753,95 @@ elif choice == T["chat"]:
             active_room = room_options[selected_label]
             rid = active_room["id"]
             
-            st.markdown("---")
+            # ЗАКРЕПЛЁННАЯ ШАПКА СОБЕСЕДНИКА (НЕ ПРОКРУЧИВАЕТСЯ)
+            if not active_room.get("is_group"):
+                others = [x for x in active_room["members"].split(",") if x != me]
+                partner_name = others[0] if others else me
+                p_avatar = "https://flaticon.com"
+                p_mood = "😊 На связи в NABZ"
+                try:
+                    p_info = requests.get(f"{API_URL}/profile/{partner_name}", timeout=3)
+                    if p_info.status_code == 200 and p_info.json().get("status") == "success":
+                        pdata = p_info.json()["profile"]
+                        if pdata.get("avatar_url"):
+                            p_avatar = pdata["avatar_url"]
+                        if pdata.get("bio"):
+                            p_mood = pdata["bio"][:55]
+                except Exception:
+                    pass
+                st.markdown(f"""
+                <div class="chat-header-card">
+                    <img src="{p_avatar}" style="width:46px; height:46px; border-radius:50%; object-fit:cover; border:2px solid #00F2FE;">
+                    <div>
+                        <div style="font-weight:bold; font-size:16px; color:#FFFFFF;">@{partner_name}</div>
+                        <div style="font-size:12px; color:#00F2FE;">✨ {p_mood}</div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+            # КНОПКИ ЗВОНКОВ ЗАКРЕПЛЕНЫ СВЕРХУ
+            call_c1, call_c2, call_c3 = st.columns([2, 2, 1])
+            with call_c1:
+                st.link_button("📞 Аудиозвонок", f"https://jit.si_{rid}#config.startWithVideoMuted=true")
+            with call_c2:
+                st.link_button("📹 Видеозвонок", f"https://jit.si_{rid}")
+            with call_c3:
+                if st.button("🔄", key=f"ref_top_{rid}"):
+                    st.rerun()
+
+            # ОКНО ПЕРЕПИСКИ С СОБСТВЕННОЙ ПРОКРУТКОЙ
             m_res = requests.get(f"{API_URL}/chats/{rid}/messages", params={"viewer": me})
             msgs = m_res.json().get("messages", []) if m_res.status_code == 200 else []
-            chat_box = st.container(height=400)
+            chat_box = st.container(height=360)
             with chat_box:
-            
                 if not msgs:
                     st.caption("Сообщений пока нет. Напишите первым!")
-                # Шапка собеседника с аватаркой и настроением
-                if not active_room.get("is_group"):
-                    others = [x for x in active_room["members"].split(",") if x != me]
-                    partner_name = others[0] if others else me
-                    p_avatar = "https://flaticon.com"
-                    p_mood = "😊 На связи в NABZ"
-                    try:
-                        p_info = requests.get(f"{API_URL}/profile/{partner_name}", timeout=4)
-                        if p_info.status_code == 200 and p_info.json().get("status") == "success":
-                            pdata = p_info.json()["profile"]
-                            if pdata.get("avatar_url"):
-                                p_avatar = pdata["avatar_url"]
-                            if pdata.get("bio"):
-                                p_mood = pdata["bio"][:60]
-                    except Exception:
-                        pass
-                    st.markdown(f'''
-                    <div class="chat-header-card">
-                        <img src="{p_avatar}" style="width:48px; height:48px; border-radius:50%; object-fit:cover; border:2px solid #00F2FE;">
-                        <div>
-                            <div style="font-weight:bold; font-size:16px; color:#FFFFFF;">@{partner_name}</div>
-                            <div style="font-size:12px; color:#00F2FE;">✨ {p_mood}</div>
-                        </div>
-                    </div>
-                    ''', unsafe_allow_html=True)
-
                 group_palette = ["#2A1B3D", "#1B3B36", "#3D2B1F", "#1F2A44", "#3B1E32", "#263829"]
                 for m in msgs:
                     sender = m["sender_username"]
                     is_me = (sender == me)
                     read_mark = " ✓✓" if (is_me and m.get("is_read")) else (" ✓" if is_me else "")
+                    msg_text = m.get("text", "")
                     if is_me:
-                        st.markdown(f'''
+                        st.markdown(f"""
                         <div class="chat-row-me">
                             <div class="bubble-me">
                                 <div style="font-size:11px; color:#00F2FE; margin-bottom:2px;"><b>Вы</b> • {m["created_at"]}{read_mark}</div>
-                                <div style="font-size:15px;">{m.get("text", "")}</div>
+                                <div style="font-size:15px;">{msg_text}</div>
                             </div>
                         </div>
-                        ''', unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
                     else:
                         g_color = group_palette[sum(ord(ch) for ch in sender) % len(group_palette)]
-                        st.markdown(f'''
+                        st.markdown(f"""
                         <div class="chat-row-other">
                             <div class="bubble-other" style="background:{g_color}; border-color:#5A5A7A;">
                                 <div style="font-size:11px; color:#FFD166; margin-bottom:2px;"><b>@{sender}</b> • {m["created_at"]}</div>
-                                <div style="font-size:15px;">{m.get("text", "")}</div>
+                                <div style="font-size:15px;">{msg_text}</div>
                             </div>
                         </div>
-                        ''', unsafe_allow_html=True)
+                        """, unsafe_allow_html=True)
+
+                    if msg_text:
+                        with st.popover("🌐"):
+                            langs_menu = {"🇹🇯 Тоҷикӣ": "tg", "🇷🇺 Русский": "ru", "🇺🇸 English": "en", "🇹🇷 Türkçe": "tr", "🇺🇿 Oʻzbek": "uz", "🇮🇷 فارسی": "fa", "🇦🇪 العربية": "ar", "🇨🇳 中文": "zh-CN"}
+                            chosen_l = st.selectbox("Перевести на:", list(langs_menu.keys()), key=f"psel_{m['id']}")
+                            if st.button("✅ Перевести", key=f"pgo_{m['id']}"):
+                                st.session_state[f"tr_out_{m['id']}"] = ai_translate_text(msg_text, langs_menu[chosen_l])
+                        if st.session_state.get(f"tr_out_{m['id']}"):
+                            st.caption(f"🌐 {st.session_state[f'tr_out_{m['id']}']}")
+
                     if m.get("media_url"):
                         mtype = m.get("media_type")
                         if mtype == "image":
-                            st.image(m["media_url"], width=260)
+                            st.image(m["media_url"], width=240)
                         elif mtype == "video":
                             st.video(m["media_url"])
                         elif mtype == "audio":
                             st.audio(m["media_url"])
                         else:
-                            st.link_button("📎 Скачать прикреплённый файл", m["media_url"])
-                        
-                st.markdown("---")
-                call_c1, call_c2 = st.columns(2)
-                with call_c1:
-                    st.link_button("📞 Аудиозвонок", f"https://meet.jit.si{rid}#config.startWithVideoMuted=true")
-                with call_c2:
-                    st.link_button("📹 Видеозвонок", f"https://meet.jit.si{rid}")
-            
+                            st.link_button("📎 Скачать файл", m["media_url"])
+
             if st.session_state.pop(f"clear_inp_{rid}", False):
                 st.session_state[f"chat_inp_{rid}"] = ""
 
