@@ -7,27 +7,27 @@ API_URL = os.getenv("API_URL", "http://localhost:8000")
 def ai_translate_text(text, target_lang="ru"):
     if not text or not text.strip():
         return text
-    lang_map = {"tj": "tg", "ru": "ru", "en": "en", "uz": "uz", "kz": "kk", "kg": "ky", "fa": "fa", "ar": "ar", "tr": "tr", "zh": "zh-CN", "es": "es", "de": "de", "fr": "fr"}
+    lang_map = {"tj": "tg", "ru": "ru", "en": "en", "uz": "uz", "kz": "kk", "kg": "ky", "fa": "fa", "ar": "ar", "tr": "tr", "zh": "zh-CN", "es": "es", "de": "de"}
     tgt = lang_map.get(target_lang, target_lang)
+    try:
+        url = "https://" + "://googleapis.com" + "/translate_a/single"
+        r = requests.get(url, params={"client": "gtx", "sl": "auto", "tl": tgt, "dt": "t", "q": text}, timeout=6)
+        if r.status_code == 200:
+            data = r.json()
+            first_block = next(iter(data), [])
+            parts = [next(iter(seg), "") for seg in first_block if isinstance(seg, list)]
+            res = "".join([p for p in parts if isinstance(p, str)]).strip()
+            if res:
+                return res
+    except Exception:
+        pass
     try:
         from deep_translator import GoogleTranslator
         return GoogleTranslator(source="auto", target=tgt).translate(text)
     except Exception:
-        pass
-    try:
-        r = requests.get(
-            "https://googleapis.com",
-            params={"client": "gtx", "sl": "auto", "tl": tgt, "dt": "t", "q": text},
-            timeout=6
-        )
-        if r.status_code == 200:
-            data = r.json()
-            return "".join([x[0] for x in data[0] if x[0]])
-    except Exception:
-        pass
-    return text
+        return text
 
-st.set_page_config(page_title="NABZ — Social Network", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
+st.set_page_config(page_title="NABZ — Social Network", page_icon="⚡", layout="centered", initial_sidebar_state="collapsed")
 
 st.markdown("""
 <style>
@@ -270,6 +270,17 @@ st.markdown("""
         }
     }
 
+
+    html, body, .stApp { overscroll-behavior-y: contain !important; }
+    [data-testid="stMainBlockContainer"] { max-width: 780px !important; padding-top: 0.8rem !important; padding-bottom: 5.5rem !important; }
+    [data-testid="stPopover"] > button { background-color: #1B2432 !important; color: #00F2FE !important; border: 1px solid #2E3F54 !important; border-radius: 12px !important; padding: 4px 12px !important; min-height: 2.2rem !important; }
+    [data-testid="stVerticalBlockBorderWrapper"] video { max-height: 260px !important; border-radius: 12px !important; }
+    [data-testid="stVerticalBlockBorderWrapper"] { background-color: #151B24 !important; border: 1px solid #2A3544 !important; border-radius: 16px !important; padding: 12px 14px !important; margin-bottom: 12px !important; }
+    @media (max-width: 640px) {
+        [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"] { flex-direction: row !important; flex-wrap: nowrap !important; gap: 6px !important; }
+        [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"] > div { width: auto !important; min-width: 0 !important; flex: 1 1 0% !important; }
+    }
+    [data-testid="manage-app-button"], [class*="viewerBadge"], [class*="StatusWidget"] { display: none !important; }
 </style>
 
 """, unsafe_allow_html=True)
@@ -347,12 +358,28 @@ if "lang" not in st.session_state:
 if "feed_limit" not in st.session_state:
     st.session_state["feed_limit"] = 10
 
-lang_choice = st.sidebar.selectbox("🌐 Язык / Забон / Language", ["ru", "tj", "en"], index=["ru", "tj", "en"].index(st.session_state["lang"]))
+ALL_LANGS = {
+    "ru": "🇷🇺 Русский", "tj": "🇹🇯 Тоҷикӣ", "en": "🇺🇸 English",
+    "uz": "🇺🇿 Oʻzbekcha", "kz": "🇰🇿 Қазақша", "kg": "🇰🇬 Кыргызча",
+    "fa": "🇮🇷 فارسی", "ar": "🇦🇪 العربية", "tr": "🇹🇷 Türkçe",
+    "zh": "🇨🇳 中文", "es": "🇪🇸 Español", "de": "🇩🇪 Deutsch"
+}
+if st.session_state["lang"] not in ALL_LANGS:
+    st.session_state["lang"] = "ru"
+lang_keys = list(ALL_LANGS.keys())
+lang_choice = st.sidebar.selectbox("🌐 Язык / Language (12)", lang_keys, format_func=lambda k: ALL_LANGS[k], index=lang_keys.index(st.session_state["lang"]))
 if lang_choice != st.session_state["lang"]:
     st.session_state["lang"] = lang_choice
     st.rerun()
 
-T = LANG_TEXT[st.session_state["lang"]]
+base_T = LANG_TEXT.get(st.session_state["lang"], LANG_TEXT["ru"])
+if st.session_state["lang"] in ["ru", "tj", "en"]:
+    T = base_T
+else:
+    cache_key = f"ui_tr_{st.session_state['lang']}"
+    if cache_key not in st.session_state:
+        st.session_state[cache_key] = {k: ai_translate_text(v, st.session_state["lang"]) for k, v in LANG_TEXT["ru"].items()}
+    T = st.session_state[cache_key]
 
 st.markdown('<div class="phone-header">⚡ NABZ</div>', unsafe_allow_html=True)
 st.markdown(f'<div class="phone-slogan">{T["slogan"]}</div>', unsafe_allow_html=True)
@@ -378,6 +405,7 @@ if st.session_state["username"]:
     <div class="nabz-bottom-bar">
         <a href="?u={u_now}&p=feed" target="_self">🏠</a>
         <a href="?u={u_now}&p=reels" target="_self">🎞️</a>
+        <a href="?u={u_now}&p=market" target="_self">🛍️</a>
         <a href="?u={u_now}&p=create" target="_self">➕</a>
         <a href="?u={u_now}&p=chat" target="_self">💬</a>
         <a href="?u={u_now}&p=profile" target="_self">👤</a>
@@ -401,9 +429,9 @@ if st.session_state["username"]:
     except:
         pass
 
-menu = [T["login"], T["feed"], "🎯 Для вас", "🎞️ Reels", "🔥 Explore", "🔍 Поиск людей", T["subs"], T["bookmarks"], T["create"], T["drafts"], T["profile"], notif_label, T["chat"]]
+menu = [T["login"], T["feed"], "🎯 Для вас", "🎞️ Reels", "🛍️ Маркетплейс", "🔥 Explore", "🔍 Поиск людей", T["subs"], T["bookmarks"], T["create"], T["drafts"], T["profile"], notif_label, T["chat"]]
 p_param = st.query_params.get("p", "")
-page_map = {"feed": T["feed"], "reels": "🎞️ Reels", "create": T["create"], "chat": T["chat"], "profile": T["profile"]}
+page_map = {"feed": T["feed"], "reels": "🎞️ Reels", "market": "🛍️ Маркетплейс", "create": T["create"], "chat": T["chat"], "profile": T["profile"]}
 if p_param in page_map and page_map[p_param] in menu:
     choice = st.sidebar.radio(T["nav"], menu, index=menu.index(page_map[p_param]))
 else:
@@ -510,7 +538,7 @@ def render_feed(mode="all", bookmarked_only=False, selected_cat="🌐 Все п�
                         if not st.session_state["username"]:
                             st.warning("Войдите в аккаунт!")
                         else:
-                            requests.post(f"{API_URL}/posts/like", json={"post_id": post_id, "username": st.session_state["username"]})
+                            requests.post(f"{API_URL}/posts/like", json={"post_id": int(post_id), "username": (st.session_state.get("username") or st.query_params.get("u"))})
                             st.rerun()
                 with col2:
                     if st.button(T["repost"], key=f"rep_{post_id}_{mode}_{bookmarked_only}"):
@@ -738,7 +766,7 @@ elif choice == T["create"]:
         with c_pub:
             if st.button("🚀 Опубликовать"):
                 f_pay = [("files", (f"media_{idx}.{f.name.split('.')[-1]}", f.getvalue(), f.type)) for idx, f in enumerate(files)] if files else []
-                res = requests.post(f"{API_URL}/posts/create_with_media", data={"text": text, "username": st.session_state["username"], "is_draft": False}, files=f_pay)
+                res = requests.post(f"{API_URL}/posts/create_with_media", data={"text": (text.strip() or " "), "username": st.session_state["username"], "is_draft": False}, files=f_pay)
                 if res.status_code == 200:
                     latest_p = requests.get(f"{API_URL}/posts/list", params={"limit": 1, "feed_mode": "all"}).json().get("posts", [])
                     if latest_p:
@@ -749,7 +777,7 @@ elif choice == T["create"]:
         with c_dr:
             if st.button("📝 В черновики"):
                 f_pay = [("files", (f"media_{idx}.{f.name.split('.')[-1]}", f.getvalue(), f.type)) for idx, f in enumerate(files)] if files else []
-                res = requests.post(f"{API_URL}/posts/create_with_media", data={"text": text, "username": st.session_state["username"], "is_draft": True}, files=f_pay)
+                res = requests.post(f"{API_URL}/posts/create_with_media", data={"text": (text.strip() or " "), "username": st.session_state["username"], "is_draft": True}, files=f_pay)
                 if res.status_code == 200:
                     latest_p = requests.get(f"{API_URL}/posts/list", params={"limit": 1, "feed_mode": "drafts", "viewer": st.session_state["username"]}).json().get("posts", [])
                     if latest_p:
@@ -852,7 +880,7 @@ elif choice.startswith(T["notifs"]):
                 st.markdown(f"{icon} **{n['message']}** — *{n['created_at']}*")
 
 elif choice == T["chat"]:
-    st.subheader("💬 Мессенджер NABZ (Direct и Группы)")
+    
     if not st.session_state["username"]:
         st.warning("Войдите в аккаунт, чтобы пользоваться чатом!")
     else:
@@ -936,7 +964,7 @@ elif choice == T["chat"]:
             # ОКНО ПЕРЕПИСКИ С СОБСТВЕННОЙ ПРОКРУТКОЙ
             m_res = requests.get(f"{API_URL}/chats/{rid}/messages", params={"viewer": me})
             msgs = m_res.json().get("messages", []) if m_res.status_code == 200 else []
-            chat_box = st.container(height=360)
+            chat_box = st.container(height=520)
             with chat_box:
                 if not msgs:
                     st.caption("Сообщений пока нет. Напишите первым!")
@@ -1079,6 +1107,51 @@ elif choice == T["chat"]:
             with sc2:
                 if st.button("🔄 Обновить", key=f"ref_msg_{rid}"):
                     st.rerun()
+
+elif choice == "🛍️ Маркетплейс":
+    st.subheader("🛍️ Маркетплейс NABZ")
+    with st.expander("➕ Разместить товар или услугу"):
+        if not st.session_state["username"]:
+            st.warning("Войдите в аккаунт!")
+        else:
+            m_title = st.text_input("Название товара / услуги:", key="mk_title")
+            mc1, mc2 = st.columns(2)
+            with mc1:
+                m_price = st.text_input("Цена (например: 250 сомони):", key="mk_price")
+            with mc2:
+                m_city = st.text_input("Город:", value="Душанбе", key="mk_city")
+            m_desc = st.text_area("Описание:", key="mk_desc")
+            m_img = st.file_uploader("Фото товара:", type=["jpg", "jpeg", "png"], key="mk_img")
+            if st.button("🚀 Опубликовать товар", key="mk_pub"):
+                if m_title.strip():
+                    full_txt = f"🛍️ {m_title.strip()} | 💰 {m_price.strip() or 'Договорная'} | 📍 {m_city.strip()}\n{m_desc.strip()}"
+                    f_pay = [("files", (f"mk.{m_img.name.split('.')[-1]}", m_img.getvalue(), m_img.type))] if m_img else []
+                    res = requests.post(f"{API_URL}/posts/create_with_media", data={"text": full_txt, "username": st.session_state["username"], "is_draft": False}, files=f_pay)
+                    if res.status_code == 200:
+                        st.success("Объявление опубликовано!")
+                        st.rerun()
+                else:
+                    st.warning("Укажите название товара!")
+
+    try:
+        mk_res = requests.get(f"{API_URL}/posts/list", params={"limit": 40, "feed_mode": "all"})
+        if mk_res.status_code == 200:
+            items = [p for p in mk_res.json().get("posts", []) if str(p.get("text", "")).startswith("🛍️")]
+            if not items:
+                st.info("В Маркетплейсе пока нет товаров. Разместите первый выше!")
+            for it in items:
+                with st.container(border=True):
+                    st.markdown(f"#### {it.get('text', '')}")
+                    st.caption(f"Продавец: @{it.get('username')} • {it.get('created_at', '')}")
+                    if it.get("media_urls"):
+                        st.image(next(iter(it["media_urls"].split(",")), ""), use_container_width=True)
+                    if st.session_state["username"] and st.session_state["username"] != it.get("username"):
+                        if st.button(f"💬 Написать продавцу @{it.get('username')}", key=f"mk_chat_{it['id']}"):
+                            requests.post(f"{API_URL}/chats/create", json={"creator": st.session_state["username"], "members": [it.get("username")], "is_group": False})
+                            st.query_params["p"] = "chat"
+                            st.rerun()
+    except Exception as e:
+        st.error(f"Ошибка Маркетплейса: {e}")
 
 elif choice == "🔥 Explore":
     st.subheader("🔥 Explore: Тренды и Рекомендации NABZ")
