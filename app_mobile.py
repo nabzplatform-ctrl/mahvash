@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import requests
 API_URL = os.getenv("API_URL", "http://localhost:8000")
+# Responsive interface for desktop browsers, tablets and mobile browsers.
 
 def ai_translate_text(text, target_lang="ru"):
     if not text or not text.strip():
@@ -26,7 +27,7 @@ def ai_translate_text(text, target_lang="ru"):
         pass
     return text
 
-st.set_page_config(page_title="NABZ App", page_icon="📱", layout="centered")
+st.set_page_config(page_title="NABZ — Social Network", page_icon="⚡", layout="wide", initial_sidebar_state="expanded")
 
 st.markdown("""
 <style>
@@ -108,6 +109,167 @@ st.markdown("""
     }
 
     details, summary, [data-testid="stExpander"] summary { background-color: #161622 !important; color: #FFFFFF !important; }
+
+    /* NABZ responsive refresh: desktop, tablet and mobile */
+    :root {
+        color-scheme: dark;
+        --nabz-bg: #0b1017;
+        --nabz-panel: #151e29;
+        --nabz-panel-soft: #1b2734;
+        --nabz-border: #293847;
+        --nabz-cyan: #00d9e8;
+        --nabz-text: #edf4f8;
+        --nabz-muted: #9aabba;
+    }
+    .stApp {
+        background:
+          radial-gradient(ellipse at 50% -20%, rgba(0,217,232,.09), transparent 48%),
+          var(--nabz-bg) !important;
+        color: var(--nabz-text) !important;
+    }
+    [data-testid="stMain"] > div {
+        padding-top: 1.1rem;
+    }
+    [data-testid="stMainBlockContainer"] {
+        max-width: 1500px !important;
+        padding-left: clamp(1rem, 3vw, 2.6rem) !important;
+        padding-right: clamp(1rem, 3vw, 2.6rem) !important;
+        padding-bottom: 5.5rem !important;
+    }
+    [data-testid="stSidebar"] {
+        background: #101923 !important;
+        border-right: 1px solid var(--nabz-border);
+    }
+    [data-testid="stSidebar"] > div:first-child {
+        background: #101923 !important;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] label {
+        border-radius: 12px;
+        padding: .28rem .45rem;
+        transition: background .18s ease;
+    }
+    [data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
+        background: #1b2a37;
+    }
+    .phone-header {
+        text-align: left !important;
+        font-size: clamp(1.7rem, 3vw, 2.25rem) !important;
+        letter-spacing: -.06em;
+        font-weight: 850 !important;
+        margin: 0 auto .1rem !important;
+        max-width: 1100px;
+    }
+    .phone-slogan {
+        text-align: left !important;
+        max-width: 1100px;
+        margin: 0 auto 1.25rem !important;
+        color: var(--nabz-muted) !important;
+    }
+    .stButton > button, .stDownloadButton > button, .stLinkButton > a {
+        min-height: 2.55rem;
+        border-radius: 999px !important;
+        padding: .45rem 1rem !important;
+        transition: transform .15s ease, filter .15s ease;
+    }
+    .stButton > button:hover, .stDownloadButton > button:hover,
+    .stLinkButton > a:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.08);
+    }
+    input, textarea, [data-baseweb="select"] > div {
+        border-radius: 13px !important;
+    }
+    [data-testid="stExpander"] {
+        background: var(--nabz-panel) !important;
+        border: 1px solid var(--nabz-border) !important;
+        border-radius: 16px !important;
+        overflow: hidden;
+    }
+    [data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"] {
+        gap: 1rem;
+    }
+    [data-testid="stImage"] img, [data-testid="stVideo"] video {
+        border-radius: 14px;
+    }
+    .comment-box, .reply-box {
+        border-radius: 12px !important;
+    }
+    .repost-badge {
+        border: 1px solid #2d5360;
+    }
+    .nabz-bottom-bar {
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        background: rgba(13, 22, 31, .94) !important;
+        border-top: 1px solid rgba(0,217,232,.35) !important;
+        box-shadow: 0 -8px 28px rgba(0,0,0,.28) !important;
+    }
+    .nabz-bottom-bar a {
+        min-width: 42px;
+        text-align: center;
+        color: #eafaff !important;
+        border: 1px solid #2b4350 !important;
+        background: #182632 !important;
+    }
+    @media (min-width: 900px) {
+        .nabz-bottom-bar { display: none !important; }
+        [data-testid="stMainBlockContainer"] {
+            padding-top: 1.6rem !important;
+            padding-bottom: 2rem !important;
+        }
+        [data-testid="stSidebar"] {
+            min-width: 265px !important;
+            width: 265px !important;
+        }
+        .phone-header, .phone-slogan {
+            max-width: 1180px;
+        }
+    }
+    @media (min-width: 600px) and (max-width: 899px) {
+        [data-testid="stMainBlockContainer"] {
+            padding-left: 1.2rem !important;
+            padding-right: 1.2rem !important;
+        }
+        .nabz-bottom-bar a {
+            font-size: 21px !important;
+            padding: 6px 10px !important;
+        }
+    }
+    @media (max-width: 599px) {
+        [data-testid="stMainBlockContainer"] {
+            padding-left: .8rem !important;
+            padding-right: .8rem !important;
+            padding-top: .55rem !important;
+            padding-bottom: 5.8rem !important;
+        }
+        .phone-header { text-align: center !important; font-size: 1.75rem !important; }
+        .phone-slogan { text-align: center !important; margin-bottom: .8rem !important; }
+        [data-testid="stHorizontalBlock"] {
+            flex-wrap: wrap !important;
+            gap: .45rem !important;
+        }
+        [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+            min-width: min(100%, 125px) !important;
+        }
+        .nabz-bottom-bar {
+            height: 60px !important;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .nabz-bottom-bar a {
+            font-size: 20px !important;
+            padding: 7px 9px !important;
+            min-width: 39px;
+        }
+        div.stButton > button {
+            width: 100%;
+            white-space: normal !important;
+            min-height: 2.65rem;
+        }
+        [data-testid="stImage"] img, [data-testid="stVideo"] video {
+            max-width: 100%;
+        }
+    }
+
 </style>
 
 """, unsafe_allow_html=True)
@@ -256,7 +418,7 @@ if st.session_state["username"]:
 else:
     st.sidebar.warning("Guest Mode / Режим гостя")
 
-def render_feed(mode="all", bookmarked_only=False):
+def render_feed(mode="all", bookmarked_only=False, selected_cat="🌐 Все публикации"):
     search_query = st.text_input(T["search"], key=f"search_{mode}_{bookmarked_only}")
     
     params = {"limit": st.session_state["feed_limit"], "offset": 0, "feed_mode": mode}
@@ -271,6 +433,8 @@ def render_feed(mode="all", bookmarked_only=False):
         response = requests.get(f"{API_URL}/posts/list", params=params)
         if response.status_code == 200:
             posts = response.json().get("posts", [])
+            if selected_cat != "🌐 Все публикации":
+                posts = [p for p in posts if p.get("category") == selected_cat]
             if not posts:
                 st.info("Публикаций пока нет / Ҳоло нашре нест.")
                 return
@@ -516,7 +680,7 @@ if choice == T["login"]:
 elif choice == T["feed"]:
     st.subheader(T["feed"])
     cat_filter = st.selectbox("📂 Раздел / Рубрика:", ["🌐 Все публикации", "📢 Реклама и объявления", "💡 Лайфхаки", "🤝 Обмен опытом", "🔬 Наука и технологии", "🎨 Творчество и развлечения"])
-    render_feed(mode="all")
+    render_feed(mode="all", selected_cat=cat_filter)
 
 elif choice == "🎯 Для вас":
     st.subheader("🎯 Для вас — Персональная лента")
@@ -573,7 +737,7 @@ elif choice == T["create"]:
         c_pub, c_dr = st.columns(2)
         with c_pub:
             if st.button("🚀 Опубликовать"):
-                f_pay = [("files", (f"media_{idx}.{f.name.split('.')[-1]}", f.getvalue(), f.type)) for f in files] if files else []
+                f_pay = [("files", (f"media_{idx}.{f.name.split('.')[-1]}", f.getvalue(), f.type)) for idx, f in enumerate(files)] if files else []
                 res = requests.post(f"{API_URL}/posts/create_with_media", data={"text": text, "username": st.session_state["username"], "is_draft": False}, files=f_pay)
                 if res.status_code == 200:
                     latest_p = requests.get(f"{API_URL}/posts/list", params={"limit": 1, "feed_mode": "all"}).json().get("posts", [])
@@ -584,7 +748,7 @@ elif choice == T["create"]:
                     st.error(res.json().get("detail", "Ошибка публикации"))
         with c_dr:
             if st.button("📝 В черновики"):
-                f_pay = [("files", (f"media_{idx}.{f.name.split('.')[-1]}", f.getvalue(), f.type)) for f in files] if files else []
+                f_pay = [("files", (f"media_{idx}.{f.name.split('.')[-1]}", f.getvalue(), f.type)) for idx, f in enumerate(files)] if files else []
                 res = requests.post(f"{API_URL}/posts/create_with_media", data={"text": text, "username": st.session_state["username"], "is_draft": True}, files=f_pay)
                 if res.status_code == 200:
                     latest_p = requests.get(f"{API_URL}/posts/list", params={"limit": 1, "feed_mode": "drafts", "viewer": st.session_state["username"]}).json().get("posts", [])
@@ -821,9 +985,6 @@ elif choice == T["chat"]:
                             st.audio(m["media_url"])
                         else:
                             st.link_button("📎 Скачать файл", m["media_url"])
-
-            if st.session_state.pop(f"clear_inp_{rid}", False):
-                st.session_state[f"chat_inp_{rid}"] = ""
 
             if st.session_state.pop(f"clear_inp_{rid}", False):
                 st.session_state[f"chat_inp_{rid}"] = ""
