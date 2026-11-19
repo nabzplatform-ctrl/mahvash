@@ -27,7 +27,7 @@ def ai_translate_text(text, target_lang="ru"):
     except Exception:
         return text
 
-st.set_page_config(page_title="NABZ — Social Network", page_icon="⚡", layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="NABZ — Social Network", page_icon="⚡", layout="centered", initial_sidebar_state="auto")
 
 st.markdown("""
 <style>
@@ -432,10 +432,10 @@ if st.session_state["username"]:
 menu = [T["login"], T["feed"], "🎯 Для вас", "🎞️ Reels", "🛍️ Маркетплейс", "🔥 Explore", "🔍 Поиск людей", T["subs"], T["bookmarks"], T["create"], T["drafts"], T["profile"], notif_label, T["chat"]]
 p_param = st.query_params.get("p", "")
 page_map = {"feed": T["feed"], "reels": "🎞️ Reels", "market": "🛍️ Маркетплейс", "create": T["create"], "chat": T["chat"], "profile": T["profile"]}
+def_idx = 1 if st.session_state["username"] else 0
 if p_param in page_map and page_map[p_param] in menu:
-    choice = st.sidebar.radio(T["nav"], menu, index=menu.index(page_map[p_param]))
-else:
-    choice = st.sidebar.radio(T["nav"], menu)
+    def_idx = menu.index(page_map[p_param])
+choice = st.sidebar.radio(T["nav"], menu, index=def_idx)
 
 if st.session_state["username"]:
     st.sidebar.success(f"@{st.session_state['username']}")
