@@ -114,7 +114,7 @@ def add_notification(recipient: str, sender: str, n_type: str, post_id: Optional
     if not recipient or not sender or recipient == sender or recipient == "Аноним":
         return
     try:
-        now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         supabase.table("notifications").insert({
             "recipient_username": recipient,
             "sender_username": sender,
@@ -254,7 +254,7 @@ async def create_with_media(
         author_name = username if username else "Аноним"
         user_res = supabase.table("profiles").select("id").eq("username", author_name).execute()
         real_user_id = user_res.data[0]["id"] if (user_res and user_res.data and len(user_res.data) > 0) else None
-        current_time_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+        current_time_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         
         uploaded_urls = []
         for file in files:
@@ -294,7 +294,7 @@ async def create_with_media(
 @app.post("/posts/publish_draft/{post_id}")
 def publish_draft(post_id: int):
     try:
-        now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         supabase.table("posts").update({"is_draft": False, "created_at": now_str}).eq("id", post_id).execute()
         return {"status": "success"}
     except Exception as e:
@@ -401,7 +401,7 @@ def repost_post(action: RepostAction):
         if not orig_res.data:
             raise HTTPException(status_code=404, detail="Оригинал поста не найден")
         orig = orig_res.data[0]
-        now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         new_post = {
             "username": action.username,
             "text": orig.get("text", ""),
@@ -428,7 +428,7 @@ def edit_post(post_id: int, data: PostEdit):
         author = post_res.data.get("username")
         if data.username != author and data.username != "admin1":
             raise HTTPException(status_code=403, detail="Нет прав на редактирование")
-        now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         supabase.table("posts").update({"text": data.text, "updated_at": now_str}).eq("id", post_id).execute()
         return {"status": "success"}
     except HTTPException as he:
@@ -541,7 +541,7 @@ def get_blocked_list(username: str):
 @app.post("/reports/create")
 def create_report(data: ReportCreate):
     try:
-        now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         supabase.table("reports").insert({
             "reporter_username": data.reporter,
             "target_post_id": data.post_id,
@@ -572,7 +572,7 @@ def add_comment(data: CommentCreate):
             if diff < 5:
                 raise HTTPException(status_code=429, detail=f"Антиспам: подождите {int(5 - diff) + 1} сек.")
                 
-        now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         res = supabase.table("post_comments").insert({
             "post_id": data.post_id,
             "parent_id": data.parent_id,
@@ -658,7 +658,7 @@ async def create_story(
         )
         public_url = supabase.storage.from_("nabz-media").get_public_url(file_name)
         
-        now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         expires_iso = (datetime.now(timezone.utc) + timedelta(hours=24)).isoformat()
         
         supabase.table("stories").insert({
@@ -738,7 +738,7 @@ async def create_reel(
             supabase.storage.from_("nabz-media").upload(path=c_name, file=c_bytes, file_options={"content-type": cover_file.content_type})
             cover_url = supabase.storage.from_("nabz-media").get_public_url(c_name)
             
-        now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         supabase.table("posts").insert({
             "username": username,
             "text": text,
@@ -782,7 +782,7 @@ def create_chat_room(data: ChatRoomCreate):
             if existing.data:
                 return {"status": "success", "room": existing.data}
                 
-        now_str = datetime.now().strftime("%d.%m.%Y %H:%M")
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M")
         room_name = data.name.strip() if data.is_group and data.name else ""
         res = supabase.table("chat_rooms").insert({
             "name": room_name,
@@ -960,7 +960,7 @@ def share_post_to_chat(post_id: int = Form(...), sender: str = Form(...), recipi
         
         members_str = ",".join(sorted([sender, rec]))
         existing = supabase.table("chat_rooms").select("id").eq("is_group", False).eq("members", members_str).execute()
-        now_date = datetime.now().strftime("%d.%m.%Y %H:%M")
+        now_date = datetime.now().strftime("%Y-%m-%d %H:%M")
         if existing.data:
             room_id = existing.data[0]["id"]
         else:
